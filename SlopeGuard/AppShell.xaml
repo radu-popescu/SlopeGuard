@@ -8,8 +8,9 @@
     Title="SlopeGuard">
 
     <ShellContent
-        Title="Home"
+        Title="SlopeGuard"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
+
 
 </Shell>

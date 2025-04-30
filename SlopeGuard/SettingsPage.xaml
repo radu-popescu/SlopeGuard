@@ -1,0 +1,9 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SlopeGuard.SettingsPage">
+    <VerticalStackLayout Padding="20" Spacing="20">
+        <Label Text="Set Max Speed Limit (km/h)" FontSize="20"/>
+        <Entry x:Name="SpeedEntry" Keyboard="Numeric" Placeholder="e.g. 50" />
+        <Button Text="Save" Clicked="OnSaveClicked" />
+    </VerticalStackLayout>
+</ContentPage>
