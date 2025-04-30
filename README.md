@@ -1,8 +1,7 @@
 # SlopeGuard 🏔️
 
-**SlopeGuard** is a cross-platform ski tracking app built with .NET MAUI.  
+**SlopeGuard** is a cross-platform (Android, iOS, Windows) ski tracking app built with .NET MAUI.  
 It tracks your speed using GPS and alerts you if you go over a safe limit.
-- Cross-platform (Android, iOS, Windows)
 
   ✅ Core Architecture
 
