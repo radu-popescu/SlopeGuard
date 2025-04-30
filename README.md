@@ -18,7 +18,6 @@ It tracks your speed using GPS and alerts you if you go over a safe limit.
 
         SessionsPage.xaml: session history
 
-    Code split cleanly into Models/, Services/, and Pages/****
 
 ## Features
 🧭 Live Ski Session Tracking
