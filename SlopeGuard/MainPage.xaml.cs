@@ -2,6 +2,8 @@
 using SlopeGuard.Models;
 using SlopeGuard.Services;
 using System.Diagnostics;
+using Microsoft.Maui.Devices.Sensors;
+
 
 namespace SlopeGuard;
 
@@ -15,6 +17,10 @@ public partial class MainPage : ContentPage
     double maxSessionSpeed = 0;
     Location? lastLocation = null;
     double totalDistanceKm = 0;
+
+    DateTime lastAlertTime = DateTime.MinValue;
+    TimeSpan alertCooldown = TimeSpan.FromSeconds(10);
+
 
 
     public MainPage()
@@ -41,65 +47,71 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            while (!token.IsCancellationRequested)
+            var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(5));
+
+            await foreach (var location in Services.GeolocationExtensions.GetLocationUpdatesFallback(request, token))
+
             {
-                var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(5));
-                var location = await Geolocation.GetLocationAsync(request);
+                if (location == null) continue;
 
-                if (location != null)
+                double speed = (location.Speed ?? 0) * 3.6;
+                double altitude = location.Altitude ?? 0;
+
+                // ✅ Distance tracking
+                if (lastLocation != null)
                 {
-                    double speed = (location.Speed ?? 0) * 3.6; // Convert m/s to km/h
-                    double altitude = location.Altitude ?? 0;
+                    double dist = Location.CalculateDistance(lastLocation, location, DistanceUnits.Kilometers);
+                    totalDistanceKm += dist;
+                }
+                lastLocation = location;
 
-                    // ✅ Distance tracking
-                    if (lastLocation != null)
-                    {
-                        double dist = Location.CalculateDistance(lastLocation, location, DistanceUnits.Kilometers);
-                        totalDistanceKm += dist;
-                    }
-                    lastLocation = location;
+                // ✅ Max speed
+                if (speed > maxSessionSpeed)
+                    maxSessionSpeed = speed;
 
-                    // ✅ Max speed
-                    if (speed > maxSessionSpeed)
-                        maxSessionSpeed = speed;
-
-                    // ✅ UI Updates
+                // ✅ UI updates (must run on UI thread)
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
                     SpeedLabel.Text = $"Speed: {speed:F1} km/h";
                     AltitudeLabel.Text = $"Altitude: {altitude:F1} m";
                     DurationLabel.Text = $"Duration: {stopwatch.Elapsed:hh\\:mm\\:ss}";
                     AscentsLabel.Text = $"Ascents: {ascents}";
                     DescentsLabel.Text = $"Descents: {descents}";
+                });
 
-                    // ✅ Ascents/descents
-                    if (previousAltitude != null)
-                    {
-                        if (altitude - previousAltitude > 1.0)
-                            ascents++;
-                        else if (previousAltitude - altitude > 1.0)
-                            descents++;
-                    }
-                    previousAltitude = altitude;
+                // ✅ Ascents/descents
+                if (previousAltitude != null)
+                {
+                    if (altitude - previousAltitude > 1.0)
+                        ascents++;
+                    else if (previousAltitude - altitude > 1.0)
+                        descents++;
+                }
+                previousAltitude = altitude;
 
-                    // ✅ Overspeed alert
-                    double maxAllowed = Preferences.Get("MaxSpeed", 50.0);
-                    if (speed > maxAllowed)
+                // ✅ Speed alert
+                double maxAllowed = Preferences.Get("MaxSpeed", 50.0);
+                if (speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
+                {
+                    lastAlertTime = DateTime.Now;
+                    MainThread.BeginInvokeOnMainThread(async () =>
                     {
                         await DisplayAlert("Slow Down!", "You're exceeding your set speed limit.", "OK");
-                    }
+                    });
                 }
-
-                await Task.Delay(1000, token); // update every second
             }
         }
         catch (TaskCanceledException)
         {
-            // expected when session stops
+            // Expected on stop
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", ex.Message, "OK");
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                DisplayAlert("Error", ex.Message, "OK"));
         }
     }
+
 
 
 
