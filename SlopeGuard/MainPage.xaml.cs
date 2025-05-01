@@ -3,6 +3,10 @@ using SlopeGuard.Models;
 using SlopeGuard.Services;
 using System.Diagnostics;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Devices;
+using Microsoft.Maui.ApplicationModel;
+using Plugin.Maui.Audio;
+
 
 
 namespace SlopeGuard;
@@ -96,7 +100,36 @@ public partial class MainPage : ContentPage
                     lastAlertTime = DateTime.Now;
                     MainThread.BeginInvokeOnMainThread(async () =>
                     {
-                        await DisplayAlert("Slow Down!", "You're exceeding your set speed limit.", "OK");
+                        //await DisplayAlert("Slow Down!", "You're exceeding your set speed limit.", "OK");
+                        if (speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
+                        {
+                            lastAlertTime = DateTime.Now;
+
+                            // ✅ Vibrate
+                            try
+                            {
+                                Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(600));
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Vibration error: " + ex.Message);
+                            }
+
+                            // ✅ Play sound
+                            try
+                            {
+                                IAudioManager audioManager = AudioManager.Current;
+                                //var audioManager = App.Current.Services.GetService<IAudioManager>();
+                                var audioFile = await FileSystem.OpenAppPackageFileAsync("alert.mp3");
+                                var player = audioManager?.CreatePlayer(audioFile);
+                                player?.Play();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Audio error: " + ex.Message);
+                            }
+                        }
+
                     });
                 }
             }

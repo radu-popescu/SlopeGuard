@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Plugin.Maui.Audio;
 
 namespace SlopeGuard
 {
@@ -15,8 +16,13 @@ namespace SlopeGuard
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
+
+            builder.Services.AddSingleton<IAudioManager>(_ => AudioManager.Current);
+
+
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
+            
 #endif
 
             return builder.Build();

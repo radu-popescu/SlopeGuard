@@ -1,25 +1,141 @@
 ﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="SlopeGuard.MainPage">
+             x:Class="SlopeGuard.MainPage"
+             BackgroundColor="Black"
+             Title="SlopeGuard">
+
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="15">
-            <Label x:Name="SpeedLabel" Text="Speed: 0 km/h" FontSize="28"/>
-            <Label x:Name="AltitudeLabel" Text="Altitude: 0 m" FontSize="28"/>
-            <Label x:Name="DurationLabel" Text="Duration: 00:00:00" FontSize="28"/>
-            <Label x:Name="AscentsLabel" Text="Ascents: 0" FontSize="28"/>
-            <Label x:Name="DescentsLabel" Text="Descents: 0" FontSize="28"/>
-            <Button Text="SpeedLimit" Clicked="OnSettingsClicked"/>
-            
+        <VerticalStackLayout Padding="16" Spacing="20">
 
-            <Button Text="Start Session"
-                x:Name="StartButton"
-                Clicked="OnStartClicked" />
+            <!-- Dashboard Grid -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="100,100,100" ColumnSpacing="12" RowSpacing="12">
 
-            <Button Text="Stop Session"
-                x:Name="StopButton"
-                Clicked="OnStopClicked"
-                IsEnabled="False" />
-            <Button Text="View Sessions" Clicked="OnViewSessionsClicked" />
+                <!-- Max Speed -->
+                <Border Grid.Row="0" Grid.Column="0"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="12"
+                        HorizontalOptions="Fill">
+                    <VerticalStackLayout>
+                        <Label Text="MAX SPEED" FontSize="Caption" TextColor="LightGray"/>
+                        <Label x:Name="SpeedLabel" Text="0 km/h" FontSize="32" FontAttributes="Bold" TextColor="Red"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Distance -->
+                <Border Grid.Row="0" Grid.Column="1"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="12"
+                        HorizontalOptions="Fill">
+                    <VerticalStackLayout>
+                        <Label Text="DISTANCE" FontSize="Caption" TextColor="LightGray"/>
+                        <Label x:Name="DistanceLabel" Text="0.0 km" FontSize="32" FontAttributes="Bold" TextColor="White"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Duration -->
+                <Border Grid.Row="1" Grid.Column="0"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="12"
+                        HorizontalOptions="Fill">
+                    <VerticalStackLayout>
+                        <Label Text="DURATION" FontSize="Caption" TextColor="LightGray"/>
+                        <Label x:Name="DurationLabel" Text="00:00:00" FontSize="32" FontAttributes="Bold" TextColor="White"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Altitude -->
+                <Border Grid.Row="1" Grid.Column="1"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="12"
+                        HorizontalOptions="Fill">
+                    <VerticalStackLayout>
+                        <Label Text="ALTITUDE" FontSize="Caption" TextColor="LightGray"/>
+                        <Label x:Name="AltitudeLabel" Text="0 m" FontSize="32" FontAttributes="Bold" TextColor="White"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Ascents -->
+                <Border Grid.Row="2" Grid.Column="0"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="12"
+                        HorizontalOptions="Fill">
+                    <VerticalStackLayout>
+                        <Label Text="ASCENTS" FontSize="Caption" TextColor="LightGray"/>
+                        <Label x:Name="AscentsLabel" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Descents -->
+                <Border Grid.Row="2" Grid.Column="1"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="12"
+                        HorizontalOptions="Fill">
+                    <VerticalStackLayout>
+                        <Label Text="DESCENTS" FontSize="Caption" TextColor="LightGray"/>
+                        <Label x:Name="DescentsLabel" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White"/>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Large, Touch-Friendly Buttons -->
+            <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                <Button Text="Start Session"
+                        x:Name="StartButton"
+                        Clicked="OnStartClicked"
+                        BackgroundColor="DarkGreen"
+                        TextColor="White"
+                        CornerRadius="25"
+                        WidthRequest="240"
+                        HeightRequest="50"
+                        FontSize="Medium"/>
+
+                <Button Text="Stop Session"
+                        x:Name="StopButton"
+                        Clicked="OnStopClicked"
+                        IsEnabled="False"
+                        BackgroundColor="DarkBlue"
+                        TextColor="White"
+                        CornerRadius="25"
+                        WidthRequest="240"
+                        HeightRequest="50"
+                        FontSize="Medium"/>
+
+                <Button Text="Speed Limit"
+                        Clicked="OnSettingsClicked"
+                        BackgroundColor="DarkRed"
+                        TextColor="White"
+                        CornerRadius="25"
+                        WidthRequest="240"
+                        HeightRequest="50"
+                        FontSize="Medium"/>
+
+                <Button Text="View Sessions"
+                        Clicked="OnViewSessionsClicked"
+                        BackgroundColor="DarkGray"
+                        TextColor="White"
+                        CornerRadius="25"
+                        WidthRequest="240"
+                        HeightRequest="50"
+                        FontSize="Medium"/>
+            </VerticalStackLayout>
 
         </VerticalStackLayout>
     </ScrollView>
