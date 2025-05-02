@@ -1,9 +1,38 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="SlopeGuard.SettingsPage">
-    <VerticalStackLayout Padding="20" Spacing="20">
-        <Label Text="Set Max Speed Limit (km/h)" FontSize="20"/>
-        <Entry x:Name="SpeedEntry" Keyboard="Numeric" Placeholder="e.g. 50" />
-        <Button Text="Save" Clicked="OnSaveClicked" />
-    </VerticalStackLayout>
+             x:Class="SlopeGuard.SettingsPage"
+             BackgroundColor="Black"
+             Title="Speed Limit">
+
+	<VerticalStackLayout Padding="20" Spacing="20">
+
+		<!-- Speed input -->
+		<Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
+			<VerticalStackLayout>
+				<Label Text="Set Max Speed (km/h)" FontSize="16" TextColor="White"/>
+				<Entry x:Name="SpeedEntry"
+                       Placeholder="Enter max speed"
+                       Keyboard="Numeric"
+                       TextColor="White"
+                       BackgroundColor="#333"
+                       PlaceholderColor="Gray"/>
+			</VerticalStackLayout>
+		</Border>
+
+		<!-- Enable alert switch -->
+		<Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
+			<HorizontalStackLayout Spacing="12">
+				<Label Text="Enable Speed Alert" FontSize="16" TextColor="White" VerticalOptions="Center" />
+				<Switch x:Name="AlertSwitch" OnColor="DarkRed" />
+			</HorizontalStackLayout>
+		</Border>
+
+		<Button Text="Save"
+                Clicked="OnSaveClicked"
+                BackgroundColor="DarkGreen"
+                TextColor="White"
+                CornerRadius="25"
+                WidthRequest="200"
+                HorizontalOptions="Center"/>
+	</VerticalStackLayout>
 </ContentPage>

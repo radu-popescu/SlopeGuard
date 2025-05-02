@@ -11,6 +11,10 @@ public partial class SettingsPage : ContentPage
     public SettingsPage()
     {
         InitializeComponent();
+
+        // Load existing values
+        SpeedEntry.Text = Preferences.Get("MaxSpeed", 50.0).ToString();
+        AlertSwitch.IsToggled = Preferences.Get("SpeedAlertEnabled", true);
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
@@ -18,9 +22,9 @@ public partial class SettingsPage : ContentPage
         if (double.TryParse(SpeedEntry.Text, out double speed))
         {
             Preferences.Set("MaxSpeed", speed);
-            await DisplayAlert("Saved", $"Max speed set to {speed} km/h", "OK");
+            Preferences.Set("SpeedAlertEnabled", AlertSwitch.IsToggled);
 
-            // This will now work since we’re not using ShellContent
+            await DisplayAlert("Saved", $"Max speed set to {speed} km/h", "OK");
             await Shell.Current.GoToAsync("..");
         }
         else

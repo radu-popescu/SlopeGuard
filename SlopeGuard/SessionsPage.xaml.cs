@@ -5,9 +5,12 @@ namespace SlopeGuard;
 
 public partial class SessionsPage : ContentPage
 {
+    private readonly ViewModels.SessionsViewModel viewModel = new();
+
     public SessionsPage()
     {
         InitializeComponent();
+        BindingContext = viewModel;
     }
 
     protected override async void OnAppearing()
@@ -18,27 +21,28 @@ public partial class SessionsPage : ContentPage
 
     public async Task LoadSessions()
     {
-        await DatabaseService.InitAsync();
-        var sessions = await DatabaseService.GetSessionsAsync();
-        SessionList.ItemsSource = sessions;
+        await Services.DatabaseService.InitAsync();
+        var sessions = await Services.DatabaseService.GetSessionsAsync();
+
+        viewModel.Sessions.Clear();
+        foreach (var session in sessions)
+            viewModel.Sessions.Add(session);
     }
 
     private void OnDeleteSession(object sender, EventArgs e)
     {
         if (sender is SwipeItem swipeItem && swipeItem.CommandParameter is int id)
         {
-            // Use MainThread for UI work inside async
             MainThread.BeginInvokeOnMainThread(async () =>
             {
                 bool confirm = await DisplayAlert("Delete", "Are you sure you want to delete this session?", "Yes", "No");
                 if (confirm)
                 {
-                    await DatabaseService.DeleteSessionAsync(id);
-                    await LoadSessions(); // reload updated list
+                    await Services.DatabaseService.DeleteSessionAsync(id);
+                    await LoadSessions();
                 }
             });
         }
     }
-
-
 }
+

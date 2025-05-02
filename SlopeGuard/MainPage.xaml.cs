@@ -52,9 +52,10 @@ public partial class MainPage : ContentPage
         try
         {
             var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(5));
+            bool alertsEnabled = Preferences.Get("SpeedAlertEnabled", true);
+            double maxAllowed = Preferences.Get("MaxSpeed", 50.0);
 
             await foreach (var location in Services.GeolocationExtensions.GetLocationUpdatesFallback(request, token))
-
             {
                 if (location == null) continue;
 
@@ -73,7 +74,7 @@ public partial class MainPage : ContentPage
                 if (speed > maxSessionSpeed)
                     maxSessionSpeed = speed;
 
-                // ✅ UI updates (must run on UI thread)
+                // ✅ UI updates (on UI thread)
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     SpeedLabel.Text = $"Speed: {speed:F1} km/h";
@@ -83,7 +84,7 @@ public partial class MainPage : ContentPage
                     DescentsLabel.Text = $"Descents: {descents}";
                 });
 
-                // ✅ Ascents/descents
+                // ✅ Ascents/descents tracking
                 if (previousAltitude != null)
                 {
                     if (altitude - previousAltitude > 1.0)
@@ -93,43 +94,35 @@ public partial class MainPage : ContentPage
                 }
                 previousAltitude = altitude;
 
-                // ✅ Speed alert
-                double maxAllowed = Preferences.Get("MaxSpeed", 50.0);
-                if (speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
+                // ✅ Speed alert (if enabled and not too soon)
+                if (alertsEnabled && speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
                 {
                     lastAlertTime = DateTime.Now;
-                    MainThread.BeginInvokeOnMainThread(async () =>
+
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
-                        //await DisplayAlert("Slow Down!", "You're exceeding your set speed limit.", "OK");
-                        if (speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
+                        // ✅ Vibrate
+                        try
                         {
-                            lastAlertTime = DateTime.Now;
-
-                            // ✅ Vibrate
-                            try
-                            {
-                                Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(600));
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Vibration error: " + ex.Message);
-                            }
-
-                            // ✅ Play sound
-                            try
-                            {
-                                IAudioManager audioManager = AudioManager.Current;
-                                //var audioManager = App.Current.Services.GetService<IAudioManager>();
-                                var audioFile = await FileSystem.OpenAppPackageFileAsync("alert.mp3");
-                                var player = audioManager?.CreatePlayer(audioFile);
-                                player?.Play();
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Audio error: " + ex.Message);
-                            }
+                            Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(600));
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Vibration error: " + ex.Message);
                         }
 
+                        // ✅ Play sound
+                        try
+                        {
+                            IAudioManager audioManager = AudioManager.Current;
+                            var audioFile = await FileSystem.OpenAppPackageFileAsync("alert.mp3");
+                            var player = audioManager?.CreatePlayer(audioFile);
+                            player?.Play();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Audio error: " + ex.Message);
+                        }
                     });
                 }
             }
@@ -144,6 +137,7 @@ public partial class MainPage : ContentPage
                 DisplayAlert("Error", ex.Message, "OK"));
         }
     }
+
 
 
 
