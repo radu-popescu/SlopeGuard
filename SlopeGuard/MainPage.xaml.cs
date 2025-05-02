@@ -37,7 +37,36 @@ public partial class MainPage : ContentPage
 #else
         MapBorder.Content = null; // Prevent Windows crash
 #endif
+        _ = CenterMapOnCurrentLocationAsync(); // 🚀 Move to user’s location at launch
     }
+
+    private async Task CenterMapOnCurrentLocationAsync()
+    {
+        try
+        {
+            var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+                return;
+
+            var location = await Geolocation.GetLastKnownLocationAsync();
+            if (location == null)
+                location = await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium));
+
+            if (location != null)
+            {
+                var mapSpan = MapSpan.FromCenterAndRadius(
+                    new Location(location.Latitude, location.Longitude),
+                    Distance.FromKilometers(1));
+
+                LiveMap.MoveToRegion(mapSpan);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Map centering failed: {ex.Message}");
+        }
+    }
+
 
 
     private async void OnStartClicked(object sender, EventArgs e)
