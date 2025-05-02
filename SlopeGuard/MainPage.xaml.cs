@@ -46,11 +46,18 @@ public partial class MainPage : ContentPage
         {
             var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
             if (status != PermissionStatus.Granted)
+            {
+                Console.WriteLine("Location permission not granted.");
                 return;
+            }
 
-            var location = await Geolocation.GetLastKnownLocationAsync();
+            Location? location = await Geolocation.GetLastKnownLocationAsync();
+
             if (location == null)
-                location = await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium));
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                location = await Geolocation.GetLocationAsync(request);
+            }
 
             if (location != null)
             {
@@ -58,7 +65,14 @@ public partial class MainPage : ContentPage
                     new Location(location.Latitude, location.Longitude),
                     Distance.FromKilometers(1));
 
-                LiveMap.MoveToRegion(mapSpan);
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    LiveMap.MoveToRegion(mapSpan);
+                });
+            }
+            else
+            {
+                Console.WriteLine("Unable to obtain current location.");
             }
         }
         catch (Exception ex)
@@ -66,6 +80,7 @@ public partial class MainPage : ContentPage
             Console.WriteLine($"Map centering failed: {ex.Message}");
         }
     }
+
 
 
 
