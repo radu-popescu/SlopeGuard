@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Controls.Hosting;
+using Microsoft.Maui.Hosting;
 using Plugin.Maui.Audio;
 
 namespace SlopeGuard
@@ -10,19 +12,18 @@ namespace SlopeGuard
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiMaps() // ✅ REQUIRED for maps
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
-
+            //builder.Services.AddAudioPlayer();
             builder.Services.AddSingleton<IAudioManager>(_ => AudioManager.Current);
-
 
 #if DEBUG
             builder.Logging.AddDebug();
-            
 #endif
 
             return builder.Build();

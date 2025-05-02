@@ -78,4 +78,11 @@
 	  </MauiXaml>
 	</ItemGroup>
 
+	<Target Name="FixXA0129" AfterTargets="_BuildApkEmbed">
+		<ItemGroup>
+			<_UnalignedSharedObjects Remove="@(_UnalignedSharedObjects)" />
+		</ItemGroup>
+	</Target>
+
+
 </Project>

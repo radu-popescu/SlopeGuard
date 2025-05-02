@@ -6,6 +6,8 @@ using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Devices;
 using Microsoft.Maui.ApplicationModel;
 using Plugin.Maui.Audio;
+using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Maps;
 
 
 
@@ -30,10 +32,23 @@ public partial class MainPage : ContentPage
     public MainPage()
     {
         InitializeComponent();
+#if ANDROID || IOS
+        MapBorder.IsVisible = true;
+#else
+        MapBorder.Content = null; // Prevent Windows crash
+#endif
     }
+
 
     private async void OnStartClicked(object sender, EventArgs e)
     {
+        var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+        if (status != PermissionStatus.Granted)
+        {
+            await DisplayAlert("Permission Denied", "Location permission is required to start tracking.", "OK");
+            return;
+        }
+
         if (isTracking) return;
 
         isTracking = true;
@@ -125,6 +140,18 @@ public partial class MainPage : ContentPage
                         }
                     });
                 }
+                if (LiveMap.VisibleRegion == null)
+                {
+                    var mapSpan = MapSpan.FromCenterAndRadius(
+                        new Location(location.Latitude, location.Longitude),
+                        Distance.FromKilometers(0.5));
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        LiveMap.MoveToRegion(mapSpan);
+                    });
+                }
+
             }
         }
         catch (TaskCanceledException)
@@ -204,4 +231,6 @@ public partial class MainPage : ContentPage
     {
         await Shell.Current.GoToAsync("/settings");
     }
+
+
 }
