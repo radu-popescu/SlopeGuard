@@ -9,13 +9,13 @@
         <!-- Background image -->
         <Image Source="background.png"
                Aspect="AspectFill"
-               Opacity="0.15"
+               Opacity="0.8"
                HorizontalOptions="Fill"
                VerticalOptions="Fill"
                ZIndex="0" />
-    
 
-	<CollectionView x:Name="SessionList"
+
+        <CollectionView x:Name="SessionList"
                     ItemsSource="{Binding Sessions}"
                     Margin="12">
 		<CollectionView.ItemTemplate>

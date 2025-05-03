@@ -7,41 +7,49 @@
         <!-- Background image -->
         <Image Source="background.png"
                Aspect="AspectFill"
-               Opacity="0.15"
+               Opacity="0.8"
                HorizontalOptions="Fill"
                VerticalOptions="Fill"
                ZIndex="0" />
 
         <VerticalStackLayout Padding="20" Spacing="20">
 
-		<!-- Speed input -->
-		<Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
-			<VerticalStackLayout>
-				<Label Text="Set Max Speed (km/h)" FontSize="16" TextColor="White"/>
-				<Entry x:Name="SpeedEntry"
-                       Placeholder="Enter max speed"
-                       Keyboard="Numeric"
-                       TextColor="White"
-                       BackgroundColor="#333"
-                       PlaceholderColor="Gray"/>
-			</VerticalStackLayout>
-		</Border>
+            <!-- Speed input -->
+            <Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Set Max Speed (km/h)" FontSize="16" TextColor="White"/>
+                    <Entry x:Name="SpeedEntry"
+                           Placeholder="Enter max speed"
+                           Keyboard="Numeric"
+                           TextChanged="OnSpeedEntryChanged"
+                           TextColor="White"
+                           BackgroundColor="#333"
+                           PlaceholderColor="Gray"/>
+                    <Label x:Name="ValidationLabel"
+                           Text="Speed must be between 10 and 200 km/h."
+                           TextColor="OrangeRed"
+                           FontSize="12"
+                           IsVisible="False"/>
+                </VerticalStackLayout>
+            </Border>
 
-		<!-- Enable alert switch -->
-		<Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
-			<HorizontalStackLayout Spacing="12">
-				<Label Text="Enable Speed Alert" FontSize="16" TextColor="White" VerticalOptions="Center" />
-				<Switch x:Name="AlertSwitch" OnColor="DarkRed" />
-			</HorizontalStackLayout>
-		</Border>
+            <!-- Enable alert switch -->
+            <Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="Enable Speed Alert" FontSize="16" TextColor="White" VerticalOptions="Center" />
+                    <Switch x:Name="AlertSwitch" OnColor="DarkRed" />
+                </HorizontalStackLayout>
+            </Border>
 
-		<Button Text="Save"
-                Clicked="OnSaveClicked"
-                BackgroundColor="DarkGreen"
-                TextColor="White"
-                CornerRadius="25"
-                WidthRequest="200"
-                HorizontalOptions="Center"/>
-	</VerticalStackLayout>
+            <!-- Save button -->
+            <Button x:Name="SaveButton"
+                    Text="Save"
+                    Clicked="OnSaveClicked"
+                    BackgroundColor="DarkGreen"
+                    TextColor="White"
+                    CornerRadius="25"
+                    WidthRequest="200"
+                    HorizontalOptions="Center"/>
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>
