@@ -1,10 +1,18 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="SlopeGuard.SettingsPage"
-             BackgroundColor="Black"
              Title="Speed Limit">
 
-	<VerticalStackLayout Padding="20" Spacing="20">
+    <Grid>
+        <!-- Background image -->
+        <Image Source="background.png"
+               Aspect="AspectFill"
+               Opacity="0.15"
+               HorizontalOptions="Fill"
+               VerticalOptions="Fill"
+               ZIndex="0" />
+
+        <VerticalStackLayout Padding="20" Spacing="20">
 
 		<!-- Speed input -->
 		<Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
@@ -35,4 +43,5 @@
                 WidthRequest="200"
                 HorizontalOptions="Center"/>
 	</VerticalStackLayout>
+    </Grid>
 </ContentPage>

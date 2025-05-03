@@ -2,10 +2,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
              x:Class="SlopeGuard.MainPage"
-             BackgroundColor="Black"
              Title="SlopeGuard">
 
-    <ScrollView>
+    <Grid>
+        <!-- Background image -->
+        <Image Source="background.png"
+               Aspect="AspectFill"
+               Opacity="0.15"
+               HorizontalOptions="Fill"
+               VerticalOptions="Fill"
+               ZIndex="0" />
+
+        <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="20">
 
             <!-- Dashboard Grid -->
@@ -130,4 +138,5 @@
 
         </VerticalStackLayout>
     </ScrollView>
+ </Grid>
 </ContentPage>
