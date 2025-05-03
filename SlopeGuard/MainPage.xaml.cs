@@ -47,6 +47,13 @@ public partial class MainPage : ContentPage
         _ = CenterMapOnCurrentLocationAsync();
     }
 
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        _ = CenterMapOnCurrentLocationAsync();
+    }
+
+
     private async Task CenterMapOnCurrentLocationAsync()
     {
         try
@@ -70,7 +77,7 @@ public partial class MainPage : ContentPage
             {
                 var mapSpan = MapSpan.FromCenterAndRadius(
                     new Location(location.Latitude, location.Longitude),
-                    Distance.FromKilometers(1));
+                    Distance.FromKilometers(2));
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {

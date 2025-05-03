@@ -1,16 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<application 
-		android:allowBackup="true" 
-		android:icon="@mipmap/appicon" 
-		android:supportsRtl="true">
-		<uses-library android:name="org.apache.http.legacy" android:required="false" />
-		<meta-data android:name="com.google.android.geo.API_KEY"
-           android:value="AIzaSyBcF6wQCLvlYNGTppifBJiT-S-KCjh5YLA" />
-	</application>
-	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.companyname.slopeguard">
+
+  <!-- Permissions must be declared before the application block -->
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+  <application
+      android:allowBackup="true"
+      android:icon="@mipmap/appicon"
+      android:supportsRtl="true"
+      android:theme="@style/Maui.SplashTheme">
+
+    <uses-library android:name="org.apache.http.legacy" android:required="false" />
+
+    <!-- Google Maps API Key -->
+    <meta-data android:name="com.google.android.geo.API_KEY"
+               android:value="AIzaSyBcF6wQCLvlYNGTppifBJiT-S-KCjh5YLA" />
+
+  </application>
 </manifest>
