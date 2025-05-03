@@ -8,6 +8,7 @@ using Microsoft.Maui.ApplicationModel;
 using Plugin.Maui.Audio;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Maps;
+using Microsoft.Maui.Controls.Shapes;
 
 
 
@@ -32,6 +33,14 @@ public partial class MainPage : ContentPage
         InitializeComponent();
 #if ANDROID || IOS
         MapBorder.IsVisible = true;
+        LiveMap.SizeChanged += (s, e) =>
+        {
+            LiveMap.Clip = new RoundRectangleGeometry
+            {
+                CornerRadius = new CornerRadius(12),
+                Rect = new Rect(0, 0, LiveMap.Width, LiveMap.Height)
+            };
+        };
 #else
         MapBorder.Content = null; // Prevent Windows crash
 #endif

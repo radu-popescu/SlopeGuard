@@ -83,15 +83,19 @@
                         Stroke="#444"
                         BackgroundColor="#1e1e1e"
                         StrokeShape="RoundRectangle 12"
-                        Padding="8"
+                        Padding="0"
                         HeightRequest="200"
                         Margin="0,12,0,0"
                         IsVisible="False">
                     <maps:Map x:Name="LiveMap"
-                              IsShowingUser="True"
-                              MapType="Street"
-                              HeightRequest="200"/>
+                                IsShowingUser="True"
+                                MapType="Street"
+                                HeightRequest="200"
+                                HorizontalOptions="Fill"
+                                VerticalOptions="Fill"
+                                Margin="0"  />
                 </Border>
+
 
                 <!-- Action Buttons -->
                 <Border Stroke="#444"
