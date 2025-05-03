@@ -5,138 +5,160 @@
              Title="SlopeGuard">
 
     <Grid>
-        <!-- Background image -->
         <Image Source="background.png"
                Aspect="AspectFill"
-               Opacity="0.8"
+               Opacity="0.9"
                HorizontalOptions="Fill"
                VerticalOptions="Fill"
                ZIndex="0" />
 
         <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="20">
+            <VerticalStackLayout Padding="16" Spacing="20">
 
-            <!-- Dashboard Grid -->
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                <!-- Dashboard Grid -->
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
 
-                <!-- Max Speed -->
-                <Border Grid.Row="0" Grid.Column="0" StrokeThickness="1" Stroke="#444"
-                        BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
-                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
-                        <Label Text="MAX SPEED" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
-                        <Label x:Name="SpeedLabel" Text="0.0" FontSize="28" FontAttributes="Bold" TextColor="Red" HorizontalTextAlignment="Center"/>
-                        <Label Text="km/h" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
+                    <!-- Max Speed -->
+                    <Border Grid.Row="0" Grid.Column="0" StrokeThickness="1" Stroke="#444"
+                            BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
+                            <Label Text="MAX SPEED" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="SpeedLabelValue" Text="0.0" FontSize="28" FontAttributes="Bold" TextColor="Red" HorizontalTextAlignment="Center"/>
+                            <Label Text="km/h" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Distance -->
+                    <Border Grid.Row="0" Grid.Column="1" StrokeThickness="1" Stroke="#444"
+                            BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
+                            <Label Text="DISTANCE" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="DistanceLabelValue" Text="0.0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
+                            <Label Text="km" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Duration -->
+                    <Border Grid.Row="1" Grid.Column="0" StrokeThickness="1" Stroke="#444"
+                            BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
+                            <Label Text="DURATION" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="DurationLabelValue" Text="00:00:00" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
+                            <Label Text="hh:mm:ss" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Altitude -->
+                    <Border Grid.Row="1" Grid.Column="1" StrokeThickness="1" Stroke="#444"
+                            BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
+                            <Label Text="ALTITUDE" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="AltitudeLabelValue" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
+                            <Label Text="m" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Ascents -->
+                    <Border Grid.Row="2" Grid.Column="0" StrokeThickness="1" Stroke="#444"
+                            BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
+                            <Label Text="ASCENTS" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="AscentsLabelValue" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Descents -->
+                    <Border Grid.Row="2" Grid.Column="1" StrokeThickness="1" Stroke="#444"
+                            BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
+                            <Label Text="DESCENTS" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="DescentsLabelValue" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Live Map -->
+                <Border x:Name="MapBorder"
+                        StrokeThickness="1"
+                        Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="8"
+                        HeightRequest="200"
+                        Margin="0,12,0,0"
+                        IsVisible="False">
+                    <maps:Map x:Name="LiveMap"
+                              IsShowingUser="True"
+                              MapType="Street"
+                              HeightRequest="200"/>
                 </Border>
 
-                <!-- Distance -->
-                <Border Grid.Row="0" Grid.Column="1" StrokeThickness="1" Stroke="#444"
-                        BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
-                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
-                        <Label Text="DISTANCE" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
-                        <Label x:Name="DistanceLabel" Text="0.0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
-                        <Label Text="km" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
+                <!-- Action Buttons -->
+                <Border Stroke="#444"
+                        BackgroundColor="#1e1e1e"
+                        StrokeShape="RoundRectangle 16"
+                        Padding="12"
+                        Margin="0,20,0,20">
+
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                          ColumnSpacing="12"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center">
+
+                        <!-- Start Button -->
+                        <Button Grid.Column="0"
+                                Text="Start"
+                                x:Name="StartButton"
+                                Clicked="OnStartClicked"
+                                BackgroundColor="DarkGreen"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="12"
+                                WidthRequest="80"
+                                HeightRequest="60"
+                                FontSize="14" />
+
+                        <!-- Stop Button -->
+                        <Button Grid.Column="1"
+                                Text="Stop"
+                                x:Name="StopButton"
+                                Clicked="OnStopClicked"
+                                IsEnabled="False"
+                                BackgroundColor="DarkRed"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="12"
+                                WidthRequest="80"
+                                HeightRequest="60"
+                                FontSize="14" />
+
+                        <!-- Speed Limit -->
+                        <Button Grid.Column="2"
+                                Text="Speed"
+                                Clicked="OnSettingsClicked"
+                                BackgroundColor="#555"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="12"
+                                WidthRequest="80"
+                                HeightRequest="60"
+                                FontSize="14" />
+
+                        <!-- Tracks -->
+                        <Button Grid.Column="3"
+                                Text="Tracks"
+                                Clicked="OnViewSessionsClicked"
+                                BackgroundColor="#333"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="12"
+                                WidthRequest="80"
+                                HeightRequest="60"
+                                FontSize="14" />
+                    </Grid>
                 </Border>
 
-                <!-- Duration -->
-                <Border Grid.Row="1" Grid.Column="0" StrokeThickness="1" Stroke="#444"
-                        BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
-                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
-                        <Label Text="DURATION" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
-                        <Label x:Name="DurationLabel" Text="00:00:00" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
-                        <Label Text="hh:mm:ss" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
-                </Border>
-
-                <!-- Altitude -->
-                <Border Grid.Row="1" Grid.Column="1" StrokeThickness="1" Stroke="#444"
-                        BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
-                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
-                        <Label Text="ALTITUDE" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
-                        <Label x:Name="AltitudeLabel" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
-                        <Label Text="m" FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
-                </Border>
-
-                <!-- Ascents -->
-                <Border Grid.Row="2" Grid.Column="0" StrokeThickness="1" Stroke="#444"
-                        BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
-                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
-                        <Label Text="ASCENTS" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
-                        <Label x:Name="AscentsLabel" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
-                </Border>
-
-                <!-- Descents -->
-                <Border Grid.Row="2" Grid.Column="1" StrokeThickness="1" Stroke="#444"
-                        BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="12">
-                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
-                        <Label Text="DESCENTS" FontSize="10" TextColor="LightGray" HorizontalTextAlignment="Center"/>
-                        <Label x:Name="DescentsLabel" Text="0" FontSize="28" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
-                </Border>
-            </Grid>
-
-            <!-- Live Map -->
-            <Border x:Name="MapBorder"
-                    StrokeThickness="1"
-                    Stroke="#444"
-                    BackgroundColor="#1e1e1e"
-                    StrokeShape="RoundRectangle 12"
-                    Padding="8"
-                    HeightRequest="200"
-                    Margin="0,12,0,0"
-                    IsVisible="False">
-                <maps:Map x:Name="LiveMap"
-                          IsShowingUser="True"
-                          MapType="Street"
-                          HeightRequest="200"/>
-            </Border>
-
-            <!-- Action Buttons -->
-            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Padding="4,16">
-                <Button Grid.Column="0"
-                        Text="Start"
-                        x:Name="StartButton"
-                        Clicked="OnStartClicked"
-                        BackgroundColor="DarkGreen"
-                        TextColor="White"
-                        CornerRadius="16"
-                        HeightRequest="50"
-                        FontSize="Small"/>
-
-                <Button Grid.Column="1"
-                        Text="Stop"
-                        x:Name="StopButton"
-                        Clicked="OnStopClicked"
-                        IsEnabled="False"
-                        BackgroundColor="DarkBlue"
-                        TextColor="White"
-                        CornerRadius="16"
-                        HeightRequest="50"
-                        FontSize="Small"/>
-
-                <Button Grid.Column="2"
-                        Text="Speed"
-                        Clicked="OnSettingsClicked"
-                        BackgroundColor="DarkRed"
-                        TextColor="White"
-                        CornerRadius="16"
-                        HeightRequest="50"
-                        FontSize="Small"/>
-
-                <Button Grid.Column="3"
-                        Text="Sessions"
-                        Clicked="OnViewSessionsClicked"
-                        BackgroundColor="DarkGray"
-                        TextColor="White"
-                        CornerRadius="16"
-                        HeightRequest="50"
-                        FontSize="Small"/>
-            </Grid>
-
-        </VerticalStackLayout>
-    </ScrollView>
- </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

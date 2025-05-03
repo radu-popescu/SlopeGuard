@@ -27,8 +27,6 @@ public partial class MainPage : ContentPage
     DateTime lastAlertTime = DateTime.MinValue;
     TimeSpan alertCooldown = TimeSpan.FromSeconds(10);
 
-
-
     public MainPage()
     {
         InitializeComponent();
@@ -37,7 +35,7 @@ public partial class MainPage : ContentPage
 #else
         MapBorder.Content = null; // Prevent Windows crash
 #endif
-        _ = CenterMapOnCurrentLocationAsync(); // 🚀 Move to user’s location at launch
+        _ = CenterMapOnCurrentLocationAsync();
     }
 
     private async Task CenterMapOnCurrentLocationAsync()
@@ -81,9 +79,6 @@ public partial class MainPage : ContentPage
         }
     }
 
-
-
-
     private async void OnStartClicked(object sender, EventArgs e)
     {
         var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
@@ -105,7 +100,6 @@ public partial class MainPage : ContentPage
         await StartTrackingSpeed(cts.Token);
     }
 
-
     private async Task StartTrackingSpeed(CancellationToken token)
     {
         try
@@ -121,7 +115,6 @@ public partial class MainPage : ContentPage
                 double speed = (location.Speed ?? 0) * 3.6;
                 double altitude = location.Altitude ?? 0;
 
-                // ✅ Distance tracking
                 if (lastLocation != null)
                 {
                     double dist = Location.CalculateDistance(lastLocation, location, DistanceUnits.Kilometers);
@@ -129,21 +122,19 @@ public partial class MainPage : ContentPage
                 }
                 lastLocation = location;
 
-                // ✅ Max speed
                 if (speed > maxSessionSpeed)
                     maxSessionSpeed = speed;
 
-                // ✅ UI updates (on UI thread)
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    SpeedLabel.Text = $"Speed: {speed:F1} km/h";
-                    AltitudeLabel.Text = $"Altitude: {altitude:F1} m";
-                    DurationLabel.Text = $"Duration: {stopwatch.Elapsed:hh\\:mm\\:ss}";
-                    AscentsLabel.Text = $"Ascents: {ascents}";
-                    DescentsLabel.Text = $"Descents: {descents}";
+                    SpeedLabelValue.Text = $"{speed:F1}";
+                    AltitudeLabelValue.Text = $"{altitude:F0}";
+                    DurationLabelValue.Text = $"{stopwatch.Elapsed:hh\\:mm\\:ss}";
+                    AscentsLabelValue.Text = ascents.ToString();
+                    DescentsLabelValue.Text = descents.ToString();
+                    DistanceLabelValue.Text = $"{totalDistanceKm:F1}";
                 });
 
-                // ✅ Ascents/descents tracking
                 if (previousAltitude != null)
                 {
                     if (altitude - previousAltitude > 1.0)
@@ -153,14 +144,12 @@ public partial class MainPage : ContentPage
                 }
                 previousAltitude = altitude;
 
-                // ✅ Speed alert (if enabled and not too soon)
                 if (alertsEnabled && speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
                 {
                     lastAlertTime = DateTime.Now;
 
                     await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
-                        // ✅ Vibrate
                         try
                         {
                             Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(600));
@@ -170,7 +159,6 @@ public partial class MainPage : ContentPage
                             Console.WriteLine("Vibration error: " + ex.Message);
                         }
 
-                        // ✅ Play sound
                         try
                         {
                             IAudioManager audioManager = AudioManager.Current;
@@ -184,6 +172,7 @@ public partial class MainPage : ContentPage
                         }
                     });
                 }
+
                 if (LiveMap.VisibleRegion == null)
                 {
                     var mapSpan = MapSpan.FromCenterAndRadius(
@@ -195,7 +184,6 @@ public partial class MainPage : ContentPage
                         LiveMap.MoveToRegion(mapSpan);
                     });
                 }
-
             }
         }
         catch (TaskCanceledException)
@@ -208,12 +196,6 @@ public partial class MainPage : ContentPage
                 DisplayAlert("Error", ex.Message, "OK"));
         }
     }
-
-
-
-
-
-
 
     private async void OnStopClicked(object sender, EventArgs e)
     {
@@ -232,7 +214,7 @@ public partial class MainPage : ContentPage
             MaxSpeed = maxSessionSpeed,
             Ascents = ascents,
             Descents = descents,
-            Distance = totalDistanceKm // we’ll track this next!
+            Distance = totalDistanceKm
         };
 
         await DatabaseService.InsertSessionAsync(session);
@@ -249,8 +231,6 @@ public partial class MainPage : ContentPage
         ResetSessionData();
     }
 
-
-
     private void ResetSessionData()
     {
         maxSessionSpeed = 0;
@@ -258,11 +238,12 @@ public partial class MainPage : ContentPage
         descents = 0;
         previousAltitude = null;
 
-        SpeedLabel.Text = "Speed: 0 km/h";
-        AltitudeLabel.Text = "Altitude: 0 m";
-        DurationLabel.Text = "Duration: 00:00:00";
-        AscentsLabel.Text = "Ascents: 0";
-        DescentsLabel.Text = "Descents: 0";
+        SpeedLabelValue.Text = "0.0";
+        AltitudeLabelValue.Text = "0";
+        DurationLabelValue.Text = "00:00:00";
+        AscentsLabelValue.Text = "0";
+        DescentsLabelValue.Text = "0";
+        DistanceLabelValue.Text = "0.0";
     }
 
     private async void OnViewSessionsClicked(object sender, EventArgs e)
@@ -270,11 +251,8 @@ public partial class MainPage : ContentPage
         await Shell.Current.GoToAsync("/sessions");
     }
 
-
     private async void OnSettingsClicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync("/settings");
     }
-
-
 }

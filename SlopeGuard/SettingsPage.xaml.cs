@@ -31,7 +31,7 @@ public partial class SettingsPage : ContentPage
 
     private void ValidateSpeedInput(string text)
     {
-        if (int.TryParse(text, out int value) && value >= 10 && value <= 200)
+        if (int.TryParse(text, out int value) && value >= 10 && value <= 100)
         {
             SpeedEntry.TextColor = Colors.White;
             SaveButton.IsEnabled = true;
@@ -41,7 +41,7 @@ public partial class SettingsPage : ContentPage
         {
             SpeedEntry.TextColor = Colors.Red;
             SaveButton.IsEnabled = false;
-            ValidationLabel.Text = "Speed must be between 10 and 200 km/h.";
+            ValidationLabel.Text = "Speed must be between 10 and 100 km/h.";
             ValidationLabel.IsVisible = true;
         }
     }
