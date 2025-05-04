@@ -19,7 +19,8 @@
 
     <!-- Google Maps API Key -->
     <meta-data android:name="com.google.android.geo.API_KEY"
-               android:value="AIzaSyBcF6wQCLvlYNGTppifBJiT-S-KCjh5YLA" />
+           android:value="@string/google_maps_key" />
+
 
   </application>
 </manifest>

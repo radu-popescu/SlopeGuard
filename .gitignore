@@ -10,6 +10,12 @@
 *.userosscache
 *.sln.docstates
 
+# === Android secrets ===
+Platforms/Android/secrets.env
+Platforms/Android/Resources/values/google_maps_api.xml
+
+
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

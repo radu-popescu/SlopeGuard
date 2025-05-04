@@ -4,15 +4,6 @@
 		<TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
 		<AndroidMinSdkVersion>23</AndroidMinSdkVersion>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
-		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
-		<!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
-
-		<!-- Note for MacCatalyst:
-		The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
-		When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
-		The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
-		either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
-		<!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>SlopeGuard</RootNamespace>
@@ -22,17 +13,11 @@
 		<Nullable>enable</Nullable>
 		<AndroidLinkMode>None</AndroidLinkMode>
 
-		<!-- Display name -->
 		<ApplicationTitle>SlopeGuard</ApplicationTitle>
-
-		<!-- App Identifier -->
 		<ApplicationId>com.companyname.slopeguard</ApplicationId>
-
-		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
@@ -40,51 +25,64 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">23.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
-
-		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
-
-		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
-		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
-
-		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
-
-		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <AndroidResource Include="Platforms\Android\Resources\values\google_maps_api.xml" />
+	</ItemGroup>
+
+	<!-- Hide secrets from being packed -->
+	<ItemGroup>
+		<None Remove="Platforms\Android\secrets.env" />
+	</ItemGroup>
+	<ItemGroup>
+		<MauiAsset Include="Platforms\Android\secrets.env" />
+	</ItemGroup>
+
+	<!-- Packages -->
+	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.60" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.4" />
 		<PackageReference Include="Microsoft.Maui.Controls.Maps" Version="9.0.60" />
-		<PackageReference Include="Microsoft.Maui.Core" Version="9.0.60" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.60" />
+		<PackageReference Include="Microsoft.Maui.Core" Version="9.0.60" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.4" />
 		<PackageReference Include="Plugin.Maui.Audio" Version="3.1.1" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 	</ItemGroup>
 
+	<!-- XAML pages -->
 	<ItemGroup>
-	  <MauiXaml Update="SessionsPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="SettingsPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
+		<MauiXaml Update="SessionsPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="SettingsPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 	</ItemGroup>
 
+	<!-- Workaround for XA0129 -->
 	<Target Name="FixXA0129" AfterTargets="_BuildApkEmbed">
 		<ItemGroup>
 			<_UnalignedSharedObjects Remove="@(_UnalignedSharedObjects)" />
 		</ItemGroup>
 	</Target>
 
+	<!-- 🔐 Inject API Key from secrets.env -->
+	<Target Name="ReadGoogleMapsApiKey" BeforeTargets="Build">
+		<ReadLinesFromFile File="Platforms/Android/secrets.env">
+			<Output TaskParameter="Lines" ItemName="SecretLines" />
+		</ReadLinesFromFile>
+		<PropertyGroup>
+			<GoogleMapsApiKey>$([System.Text.RegularExpressions.Regex]::Match('%(SecretLines.Identity)', '^GOOGLE_MAPS_API_KEY=(.*)$').Groups[1].Value)</GoogleMapsApiKey>
+		</PropertyGroup>
+	</Target>
 
 </Project>

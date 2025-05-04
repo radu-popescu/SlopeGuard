@@ -77,7 +77,7 @@ public partial class MainPage : ContentPage
             {
                 var mapSpan = MapSpan.FromCenterAndRadius(
                     new Location(location.Latitude, location.Longitude),
-                    Distance.FromKilometers(2));
+                    Distance.FromKilometers(1));
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
