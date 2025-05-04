@@ -26,6 +26,8 @@ public partial class MainPage : ContentPage
     Location? lastLocation = null;
     double totalDistanceKm = 0;
     Polyline routeLine = new Polyline { StrokeColor = Colors.Red, StrokeWidth = 5 }; // new
+    Queue<double> altitudeHistory = new(); // at class level
+    const int SmoothingWindow = 5;
 
     DateTime lastAlertTime = DateTime.MinValue;
     TimeSpan alertCooldown = TimeSpan.FromSeconds(10);
@@ -150,13 +152,34 @@ public partial class MainPage : ContentPage
                     DistanceLabelValue.Text = $"{totalDistanceKm:F1}";
                 });
 
-                if (previousAltitude != null)
+                bool isDescending = false;
+
+                if (altitude.HasValue)
                 {
-                    if (altitude - previousAltitude > 1.0)
-                        ascents++;
-                    else if (previousAltitude - altitude > 1.0)
-                        descents++;
+                    // Add new value
+                    altitudeHistory.Enqueue(altitude.Value);
+                    if (altitudeHistory.Count > SmoothingWindow)
+                        altitudeHistory.Dequeue();
+
+                    // Compute average slope direction
+                    if (altitudeHistory.Count == SmoothingWindow)
+                    {
+                        double trend = altitudeHistory.Last() - altitudeHistory.First();
+
+                        if (trend > 10.0)
+                        {
+                            ascents++;
+                            isDescending = false;
+                        }
+                        else if (trend < -10.0)
+                        {
+                            descents++;
+                            isDescending = true;
+                        }
+                        // If near flat (between -5 and +5) — ignore
+                    }
                 }
+
                 previousAltitude = altitude;
 
                 if (alertsEnabled && speed > maxAllowed && DateTime.Now - lastAlertTime > alertCooldown)
@@ -190,8 +213,14 @@ public partial class MainPage : ContentPage
 
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    LiveMap.MoveToRegion(MapSpan.FromCenterAndRadius(new Location(location.Latitude, location.Longitude), Distance.FromKilometers(0.3)));
-                    routeLine.Geopath.Add(new Location(location.Latitude, location.Longitude));
+                    LiveMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                        new Location(location.Latitude, location.Longitude),
+                        Distance.FromKilometers(0.3)));
+
+                    if (isDescending)
+                    {
+                        routeLine.Geopath.Add(new Location(location.Latitude, location.Longitude));
+                    }
                 });
             }
         }
