@@ -18,5 +18,6 @@ namespace SlopeGuard.Models
         public int Ascents { get; set; }
         public int Descents { get; set; }
         public double Distance { get; set; } // in km
+        public double MaxAltitude { get; set; }
     }
 }

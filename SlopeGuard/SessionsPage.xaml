@@ -43,12 +43,15 @@
 							<Label Text="{Binding Duration, StringFormat='Duration: {0}'}"
                                    FontSize="14"
                                    TextColor="White" />
+                            <Label Text="{Binding Distance, StringFormat='Distance: {0:F2} km'}"
+                                   FontSize="14"
+                                   TextColor="White" />
 							<Label Text="{Binding MaxSpeed, StringFormat='Max Speed: {0:F1} km/h'}"
                                    FontSize="14"
                                    TextColor="White" />
-							<Label Text="{Binding Distance, StringFormat='Distance: {0:F2} km'}"
+                            <Label Text="{Binding MaxAltitude, StringFormat='Max Altitude: {0:F0} m'}"
                                    FontSize="14"
-                                   TextColor="White" />
+                                   TextColor="White"/>
 							<Label Text="{Binding Ascents, StringFormat='Ascents: {0}'}"
                                    FontSize="14"
                                    TextColor="White" />

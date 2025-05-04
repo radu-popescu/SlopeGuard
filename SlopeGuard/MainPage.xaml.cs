@@ -8,8 +8,7 @@ using Microsoft.Maui.ApplicationModel;
 using Plugin.Maui.Audio;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Maps;
-using Microsoft.Maui.Controls.Shapes;
-
+using Microsoft.Maui.Controls.Maps;
 
 
 namespace SlopeGuard;
@@ -19,11 +18,14 @@ public partial class MainPage : ContentPage
     bool isTracking = false;
     int ascents = 0, descents = 0;
     double? previousAltitude = null;
+    //double maxAltitude = 0;
+    double maxAltitude = double.MinValue;
     Stopwatch stopwatch = new Stopwatch();
     CancellationTokenSource? cts;
     double maxSessionSpeed = 0;
     Location? lastLocation = null;
     double totalDistanceKm = 0;
+    Polyline routeLine = new Polyline { StrokeColor = Colors.Red, StrokeWidth = 5 }; // new
 
     DateTime lastAlertTime = DateTime.MinValue;
     TimeSpan alertCooldown = TimeSpan.FromSeconds(10);
@@ -33,17 +35,10 @@ public partial class MainPage : ContentPage
         InitializeComponent();
 #if ANDROID || IOS
         MapBorder.IsVisible = true;
-        LiveMap.SizeChanged += (s, e) =>
-        {
-            LiveMap.Clip = new RoundRectangleGeometry
-            {
-                CornerRadius = new CornerRadius(12),
-                Rect = new Rect(0, 0, LiveMap.Width, LiveMap.Height)
-            };
-        };
 #else
         MapBorder.Content = null; // Prevent Windows crash
 #endif
+        LiveMap.MapElements.Add(routeLine); // add polyline to map
         _ = CenterMapOnCurrentLocationAsync();
     }
 
@@ -52,7 +47,6 @@ public partial class MainPage : ContentPage
         base.OnAppearing();
         _ = CenterMapOnCurrentLocationAsync();
     }
-
 
     private async Task CenterMapOnCurrentLocationAsync()
     {
@@ -113,6 +107,8 @@ public partial class MainPage : ContentPage
         stopwatch.Restart();
         cts = new CancellationTokenSource();
 
+        routeLine.Geopath.Clear(); // clear any old route
+
         await StartTrackingSpeed(cts.Token);
     }
 
@@ -129,7 +125,10 @@ public partial class MainPage : ContentPage
                 if (location == null) continue;
 
                 double speed = (location.Speed ?? 0) * 3.6;
-                double altitude = location.Altitude ?? 0;
+                double? altitude = location.Altitude;
+
+                if (altitude.HasValue && altitude.Value > maxAltitude)
+                    maxAltitude = altitude.Value;
 
                 if (lastLocation != null)
                 {
@@ -144,7 +143,7 @@ public partial class MainPage : ContentPage
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     SpeedLabelValue.Text = $"{speed:F1}";
-                    AltitudeLabelValue.Text = $"{altitude:F0}";
+                    AltitudeLabelValue.Text = altitude.HasValue ? $"{altitude.Value:F0}" : "N/A";
                     DurationLabelValue.Text = $"{stopwatch.Elapsed:hh\\:mm\\:ss}";
                     AscentsLabelValue.Text = ascents.ToString();
                     DescentsLabelValue.Text = descents.ToString();
@@ -189,17 +188,11 @@ public partial class MainPage : ContentPage
                     });
                 }
 
-                if (LiveMap.VisibleRegion == null)
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    var mapSpan = MapSpan.FromCenterAndRadius(
-                        new Location(location.Latitude, location.Longitude),
-                        Distance.FromKilometers(0.5));
-
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        LiveMap.MoveToRegion(mapSpan);
-                    });
-                }
+                    LiveMap.MoveToRegion(MapSpan.FromCenterAndRadius(new Location(location.Latitude, location.Longitude), Distance.FromKilometers(0.3)));
+                    routeLine.Geopath.Add(new Location(location.Latitude, location.Longitude));
+                });
             }
         }
         catch (TaskCanceledException)
@@ -227,20 +220,22 @@ public partial class MainPage : ContentPage
         {
             Date = DateTime.Now,
             Duration = stopwatch.Elapsed.ToString(@"hh\:mm\:ss"),
+            Distance = totalDistanceKm,
             MaxSpeed = maxSessionSpeed,
+            MaxAltitude = maxAltitude,
             Ascents = ascents,
-            Descents = descents,
-            Distance = totalDistanceKm
+            Descents = descents
         };
 
         await DatabaseService.InsertSessionAsync(session);
 
         string summary = $"Session Summary:\n" +
                          $"- Duration: {session.Duration}\n" +
+                         $"- Distance: {session.Distance:F2} km\n" +
                          $"- Max Speed: {session.MaxSpeed:F1} km/h\n" +
+                         $"- Max Altitude: {session.MaxAltitude}\n" +
                          $"- Ascents: {session.Ascents}\n" +
-                         $"- Descents: {session.Descents}\n" +
-                         $"- Distance: {session.Distance:F2} km";
+                         $"- Descents: {session.Descents}\n";
 
         await DisplayAlert("SlopeGuard", summary, "OK");
 
@@ -252,6 +247,7 @@ public partial class MainPage : ContentPage
         maxSessionSpeed = 0;
         ascents = 0;
         descents = 0;
+        maxAltitude = 0;
         previousAltitude = null;
 
         SpeedLabelValue.Text = "0.0";
@@ -260,6 +256,7 @@ public partial class MainPage : ContentPage
         AscentsLabelValue.Text = "0";
         DescentsLabelValue.Text = "0";
         DistanceLabelValue.Text = "0.0";
+        routeLine.Geopath.Clear();
     }
 
     private async void OnViewSessionsClicked(object sender, EventArgs e)
