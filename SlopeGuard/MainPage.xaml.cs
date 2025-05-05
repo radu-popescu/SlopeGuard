@@ -300,7 +300,9 @@ public partial class MainPage : ContentPage
                 using var stream = await snapshot.OpenReadAsync();
                 using var file = File.Create(path);
                 await stream.CopyToAsync(file);
+                await file.FlushAsync(); // ✅ Ensure all data is committed to disk
                 Console.WriteLine($"✅ Snapshot saved to: {path}");
+
             }
             else
             {

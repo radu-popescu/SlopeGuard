@@ -70,7 +70,7 @@
                                            FontSize="14"
                                            TextColor="White" />
                                 </VerticalStackLayout>
-
+                                
                                 <!-- Snapshot Image -->
                                 <Border Grid.Column="1"
                                         BackgroundColor="#222"
@@ -78,13 +78,16 @@
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 8"
                                         VerticalOptions="Center">
-                                    <Image Source="{Binding MapImagePath, Converter={StaticResource FilePathToImageSourceConverter}}"
-                                        WidthRequest="160"
-                                        HeightRequest="130"
-                                        Aspect="AspectFill"
-                                        Margin="10,0,0,0" />
-
+                                    <Image WidthRequest="160"
+                                            HeightRequest="130"
+                                            Aspect="AspectFill"
+                                            Margin="10,0,0,0">
+                                        <Image.Source>
+                                            <FileImageSource File="{Binding MapImagePath, Converter={StaticResource FilePathToImageSourceConverter}}" />
+                                        </Image.Source>
+                                    </Image>
                                 </Border>
+
                             </Grid>
                         </Border>
                     </SwipeView>
