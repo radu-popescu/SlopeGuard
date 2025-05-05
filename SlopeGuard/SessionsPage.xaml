@@ -68,8 +68,7 @@
                                         Stroke="#555"
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 8"
-                                        VerticalOptions="Center"
-                                        Padding="2">
+                                        VerticalOptions="Center">
                                     <Image Source="{Binding MapImagePath}"
                                            HeightRequest="120"
                                            WidthRequest="160"

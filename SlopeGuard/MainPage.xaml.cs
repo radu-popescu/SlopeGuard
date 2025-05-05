@@ -235,11 +235,11 @@ public partial class MainPage : ContentPage
         cts?.Cancel();
 
         string filename = $"SlopeSession_{DateTime.Now:yyyyMMdd_HHmmss}.png";
-        //string filePath = Path.Combine(FileSystem.AppDataDirectory, filename);
-        string filePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
+        string filePath = Path.Combine(FileSystem.AppDataDirectory, filename);
+        //string filePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
 
 
-
+        await SaveMapSnapshotAsync(filePath);
 
         var session = new SkiSession
         {
@@ -262,8 +262,6 @@ public partial class MainPage : ContentPage
                          $"- Max Altitude: {session.MaxAltitude}\n" +
                          $"- Ascents: {session.Ascents}\n" +
                          $"- Descents: {session.Descents}", "OK");
-
-        await SaveMapSnapshotAsync(filePath);
 
         ResetSessionData();
     }
