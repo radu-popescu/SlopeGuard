@@ -14,55 +14,72 @@
                VerticalOptions="Fill"
                ZIndex="0" />
 
-
         <CollectionView x:Name="SessionList"
-                    ItemsSource="{Binding Sessions}"
-                    Margin="12">
-		<CollectionView.ItemTemplate>
-			<DataTemplate x:DataType="models:SkiSession">
-				<SwipeView>
-					<SwipeView.RightItems>
-						<SwipeItems>
-							<SwipeItem Text="Delete"
-                                       BackgroundColor="DarkRed"
-                                       Invoked="OnDeleteSession"
-                                       CommandParameter="{Binding Id}" />
-						</SwipeItems>
-					</SwipeView.RightItems>
+                        ItemsSource="{Binding Sessions}"
+                        Margin="12">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:SkiSession">
+                    <SwipeView>
+                        <SwipeView.RightItems>
+                            <SwipeItems>
+                                <SwipeItem Text="Delete"
+                                           BackgroundColor="DarkRed"
+                                           Invoked="OnDeleteSession"
+                                           CommandParameter="{Binding Id}" />
+                            </SwipeItems>
+                        </SwipeView.RightItems>
 
-					<Border StrokeThickness="1"
-                            Stroke="#444"
-                            BackgroundColor="#1e1e1e"
-                            StrokeShape="RoundRectangle 12"
-                            Padding="16"
-                            Margin="0,6">
-						<VerticalStackLayout Spacing="4">
-							<Label Text="{Binding Date, StringFormat='Date: {0:dd MMM yyyy HH:mm}'}"
-                                   FontSize="14"
-                                   TextColor="LightGray" />
-							<Label Text="{Binding Duration, StringFormat='Duration: {0}'}"
-                                   FontSize="14"
-                                   TextColor="White" />
-                            <Label Text="{Binding Distance, StringFormat='Distance: {0:F2} km'}"
-                                   FontSize="14"
-                                   TextColor="White" />
-							<Label Text="{Binding MaxSpeed, StringFormat='Max Speed: {0:F1} km/h'}"
-                                   FontSize="14"
-                                   TextColor="White" />
-                            <Label Text="{Binding MaxAltitude, StringFormat='Max Altitude: {0:F0} m'}"
-                                   FontSize="14"
-                                   TextColor="White"/>
-							<Label Text="{Binding Ascents, StringFormat='Ascents: {0}'}"
-                                   FontSize="14"
-                                   TextColor="White" />
-							<Label Text="{Binding Descents, StringFormat='Descents: {0}'}"
-                                   FontSize="14"
-                                   TextColor="White" />
-						</VerticalStackLayout>
-					</Border>
-				</SwipeView>
-			</DataTemplate>
-		</CollectionView.ItemTemplate>
-	</CollectionView>
+                        <Border StrokeThickness="1"
+                                Stroke="#444"
+                                BackgroundColor="#1e1e1e"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="12"
+                                Margin="0,6">
+                            <!-- Split layout: left = session info, right = image -->
+                            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                                <!-- Session Info -->
+                                <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                    <Label Text="{Binding Date, StringFormat='Date: {0:dd MMM yyyy HH:mm}'}"
+                                           FontSize="14"
+                                           TextColor="LightGray" />
+                                    <Label Text="{Binding Duration, StringFormat='Duration: {0}'}"
+                                           FontSize="14"
+                                           TextColor="White" />
+                                    <Label Text="{Binding Distance, StringFormat='Distance: {0:F2} km'}"
+                                           FontSize="14"
+                                           TextColor="White" />
+                                    <Label Text="{Binding MaxSpeed, StringFormat='Max Speed: {0:F1} km/h'}"
+                                           FontSize="14"
+                                           TextColor="White" />
+                                    <Label Text="{Binding MaxAltitude, StringFormat='Max Altitude: {0:F0} m'}"
+                                           FontSize="14"
+                                           TextColor="White"/>
+                                    <Label Text="{Binding Ascents, StringFormat='Ascents: {0}'}"
+                                           FontSize="14"
+                                           TextColor="White" />
+                                    <Label Text="{Binding Descents, StringFormat='Descents: {0}'}"
+                                           FontSize="14"
+                                           TextColor="White" />
+                                </VerticalStackLayout>
+
+                                <!-- Snapshot Image -->
+                                <Border Grid.Column="1"
+                                        BackgroundColor="#222"
+                                        Stroke="#555"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        VerticalOptions="Center"
+                                        Padding="2">
+                                    <Image Source="{Binding MapImagePath}"
+                                           HeightRequest="120"
+                                           WidthRequest="160"
+                                           Aspect="AspectFill" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
     </Grid>
 </ContentPage>

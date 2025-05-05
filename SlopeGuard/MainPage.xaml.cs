@@ -18,16 +18,30 @@ public partial class MainPage : ContentPage
     bool isTracking = false;
     int ascents = 0, descents = 0;
     double? previousAltitude = null;
-    //double maxAltitude = 0;
     double maxAltitude = double.MinValue;
     Stopwatch stopwatch = new Stopwatch();
     CancellationTokenSource? cts;
     double maxSessionSpeed = 0;
     Location? lastLocation = null;
     double totalDistanceKm = 0;
-    Polyline routeLine = new Polyline { StrokeColor = Colors.Red, StrokeWidth = 5 }; // new
-    Queue<double> altitudeHistory = new(); // at class level
+    Polyline currentRouteLine;
+    Queue<double> altitudeHistory = new();
     const int SmoothingWindow = 5;
+    List<Color> descentColors = new()
+    {
+        Color.FromArgb("#8B2EDB"),
+        Color.FromArgb("#2E19DF"),
+        Color.FromArgb("#F6E241"),
+        Color.FromArgb("#8A9247"),
+        Color.FromArgb("#951C0C"),
+        Color.FromArgb("#8CF357"),
+        Color.FromArgb("#F010BD"),
+        Color.FromArgb("#89601F"),
+        Color.FromArgb("#BE8DF8"),
+        Color.FromArgb("#038473")
+    };
+    List<Polyline> allRouteLines = new(); // 🔄 to collect all descent lines
+
 
     DateTime lastAlertTime = DateTime.MinValue;
     TimeSpan alertCooldown = TimeSpan.FromSeconds(10);
@@ -38,9 +52,10 @@ public partial class MainPage : ContentPage
 #if ANDROID || IOS
         MapBorder.IsVisible = true;
 #else
-        MapBorder.Content = null; // Prevent Windows crash
+        MapBorder.Content = null;
 #endif
-        LiveMap.MapElements.Add(routeLine); // add polyline to map
+        currentRouteLine = CreateNewPolyline();
+        LiveMap.MapElements.Add(currentRouteLine);
         _ = CenterMapOnCurrentLocationAsync();
     }
 
@@ -55,34 +70,18 @@ public partial class MainPage : ContentPage
         try
         {
             var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-            if (status != PermissionStatus.Granted)
-            {
-                Console.WriteLine("Location permission not granted.");
-                return;
-            }
+            if (status != PermissionStatus.Granted) return;
 
             Location? location = await Geolocation.GetLastKnownLocationAsync();
-
             if (location == null)
             {
-                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
-                location = await Geolocation.GetLocationAsync(request);
+                location = await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)));
             }
 
             if (location != null)
             {
-                var mapSpan = MapSpan.FromCenterAndRadius(
-                    new Location(location.Latitude, location.Longitude),
-                    Distance.FromKilometers(1));
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    LiveMap.MoveToRegion(mapSpan);
-                });
-            }
-            else
-            {
-                Console.WriteLine("Unable to obtain current location.");
+                var mapSpan = MapSpan.FromCenterAndRadius(new Location(location.Latitude, location.Longitude), Distance.FromKilometers(1));
+                await MainThread.InvokeOnMainThreadAsync(() => LiveMap.MoveToRegion(mapSpan));
             }
         }
         catch (Exception ex)
@@ -109,7 +108,9 @@ public partial class MainPage : ContentPage
         stopwatch.Restart();
         cts = new CancellationTokenSource();
 
-        routeLine.Geopath.Clear(); // clear any old route
+        currentRouteLine = CreateNewPolyline();
+        LiveMap.MapElements.Add(currentRouteLine);
+        allRouteLines.Add(currentRouteLine);
 
         await StartTrackingSpeed(cts.Token);
     }
@@ -156,12 +157,10 @@ public partial class MainPage : ContentPage
 
                 if (altitude.HasValue)
                 {
-                    // Add new value
                     altitudeHistory.Enqueue(altitude.Value);
                     if (altitudeHistory.Count > SmoothingWindow)
                         altitudeHistory.Dequeue();
 
-                    // Compute average slope direction
                     if (altitudeHistory.Count == SmoothingWindow)
                     {
                         double trend = altitudeHistory.Last() - altitudeHistory.First();
@@ -175,8 +174,9 @@ public partial class MainPage : ContentPage
                         {
                             descents++;
                             isDescending = true;
+                            currentRouteLine = CreateNewPolyline();
+                            LiveMap.MapElements.Add(currentRouteLine);
                         }
-                        // If near flat (between -5 and +5) — ignore
                     }
                 }
 
@@ -188,51 +188,40 @@ public partial class MainPage : ContentPage
 
                     await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
+                        try { Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(600)); } catch { }
                         try
                         {
-                            Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(600));
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Vibration error: " + ex.Message);
-                        }
-
-                        try
-                        {
-                            IAudioManager audioManager = AudioManager.Current;
                             var audioFile = await FileSystem.OpenAppPackageFileAsync("alert.mp3");
-                            var player = audioManager?.CreatePlayer(audioFile);
-                            player?.Play();
+                            AudioManager.Current?.CreatePlayer(audioFile)?.Play();
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Audio error: " + ex.Message);
-                        }
+                        catch { }
                     });
                 }
 
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    LiveMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                        new Location(location.Latitude, location.Longitude),
-                        Distance.FromKilometers(0.3)));
-
+                    LiveMap.MoveToRegion(MapSpan.FromCenterAndRadius(new Location(location.Latitude, location.Longitude), Distance.FromKilometers(0.3)));
                     if (isDescending)
-                    {
-                        routeLine.Geopath.Add(new Location(location.Latitude, location.Longitude));
-                    }
+                        currentRouteLine.Geopath.Add(new Location(location.Latitude, location.Longitude));
                 });
             }
         }
-        catch (TaskCanceledException)
-        {
-            // Expected on stop
-        }
+        catch (TaskCanceledException) { }
         catch (Exception ex)
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
                 DisplayAlert("Error", ex.Message, "OK"));
         }
+    }
+
+    private Polyline CreateNewPolyline()
+    {
+        var color = descentColors[descents % descentColors.Count];
+        return new Polyline
+        {
+            StrokeColor = color,
+            StrokeWidth = 5
+        };
     }
 
     private async void OnStopClicked(object sender, EventArgs e)
@@ -245,6 +234,13 @@ public partial class MainPage : ContentPage
         stopwatch.Stop();
         cts?.Cancel();
 
+        string filename = $"SlopeSession_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+        //string filePath = Path.Combine(FileSystem.AppDataDirectory, filename);
+        string filePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
+
+
+
+
         var session = new SkiSession
         {
             Date = DateTime.Now,
@@ -253,23 +249,75 @@ public partial class MainPage : ContentPage
             MaxSpeed = maxSessionSpeed,
             MaxAltitude = maxAltitude,
             Ascents = ascents,
-            Descents = descents
+            Descents = descents,
+            MapImagePath = filePath
         };
 
         await DatabaseService.InsertSessionAsync(session);
 
-        string summary = $"Session Summary:\n" +
+        await DisplayAlert("SlopeGuard", $"Session Summary:\n" +
                          $"- Duration: {session.Duration}\n" +
                          $"- Distance: {session.Distance:F2} km\n" +
                          $"- Max Speed: {session.MaxSpeed:F1} km/h\n" +
                          $"- Max Altitude: {session.MaxAltitude}\n" +
                          $"- Ascents: {session.Ascents}\n" +
-                         $"- Descents: {session.Descents}\n";
+                         $"- Descents: {session.Descents}", "OK");
 
-        await DisplayAlert("SlopeGuard", summary, "OK");
+        await SaveMapSnapshotAsync(filePath);
 
         ResetSessionData();
     }
+
+
+    private async Task SaveMapSnapshotAsync(string path)
+    {
+        try
+        {
+            var allPoints = allRouteLines.SelectMany(l => l.Geopath).ToList();
+            if (allPoints.Count < 2)
+            {
+                Console.WriteLine("Not enough points to generate map snapshot.");
+                return;
+            }
+
+            var mapSpan = GetBoundingSpan(allPoints);
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                LiveMap.MoveToRegion(mapSpan);
+            });
+
+            await Task.Delay(1500);
+
+            var snapshot = await LiveMap.CaptureAsync();
+            if (snapshot != null)
+            {
+                using var stream = await snapshot.OpenReadAsync();
+                using var file = File.Create(path);
+                await stream.CopyToAsync(file);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Snapshot error: {ex.Message}");
+        }
+    }
+
+
+    private MapSpan GetBoundingSpan(IEnumerable<Location> positions)
+    {
+        double minLat = positions.Min(p => p.Latitude);
+        double maxLat = positions.Max(p => p.Latitude);
+        double minLon = positions.Min(p => p.Longitude);
+        double maxLon = positions.Max(p => p.Longitude);
+
+        var center = new Location((minLat + maxLat) / 2, (minLon + maxLon) / 2);
+        double radiusKm = Location.CalculateDistance(minLat, minLon, maxLat, maxLon, DistanceUnits.Kilometers) / 2;
+
+        return MapSpan.FromCenterAndRadius(center, Distance.FromKilometers(radiusKm + 0.1));
+    }
+
+
+
 
     private void ResetSessionData()
     {
@@ -285,7 +333,10 @@ public partial class MainPage : ContentPage
         AscentsLabelValue.Text = "0";
         DescentsLabelValue.Text = "0";
         DistanceLabelValue.Text = "0.0";
-        routeLine.Geopath.Clear();
+
+        LiveMap.MapElements.Clear();
+        currentRouteLine = CreateNewPolyline();
+        LiveMap.MapElements.Add(currentRouteLine);
     }
 
     private async void OnViewSessionsClicked(object sender, EventArgs e)

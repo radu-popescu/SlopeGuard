@@ -19,5 +19,7 @@ namespace SlopeGuard.Models
         public int Descents { get; set; }
         public double Distance { get; set; } // in km
         public double MaxAltitude { get; set; }
+        public string? MapImagePath { get; set; } // path to the session map image
+
     }
 }
