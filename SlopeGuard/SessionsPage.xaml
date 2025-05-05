@@ -6,16 +6,9 @@
              x:Class="SlopeGuard.SessionsPage"
              x:DataType="viewmodels:SessionsViewModel"
              Title="Session History">
-
-    <ContentPage.Resources>
-        <ResourceDictionary>
-            <conv:FilePathToImageSourceConverter x:Key="FilePathToImageSourceConverter" />
-        </ResourceDictionary>
-    </ContentPage.Resources>
-
+    
 
     <Grid>
-        <!-- Background image -->
         <Image Source="background.png"
                Aspect="AspectFill"
                Opacity="0.8"
@@ -42,10 +35,9 @@
                                 Stroke="#444"
                                 BackgroundColor="#1e1e1e"
                                 StrokeShape="RoundRectangle 12"
-                                Padding="12"
+                                Padding="16"
                                 Margin="0,6">
-                            <!-- Split layout: left = session info, right = image -->
-                            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                            <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
                                 <!-- Session Info -->
                                 <VerticalStackLayout Grid.Column="0" Spacing="4">
                                     <Label Text="{Binding Date, StringFormat='Date: {0:dd MMM yyyy HH:mm}'}"
@@ -62,7 +54,7 @@
                                            TextColor="White" />
                                     <Label Text="{Binding MaxAltitude, StringFormat='Max Altitude: {0:F0} m'}"
                                            FontSize="14"
-                                           TextColor="White"/>
+                                           TextColor="White" />
                                     <Label Text="{Binding Ascents, StringFormat='Ascents: {0}'}"
                                            FontSize="14"
                                            TextColor="White" />
@@ -70,24 +62,19 @@
                                            FontSize="14"
                                            TextColor="White" />
                                 </VerticalStackLayout>
-                                
+
                                 <!-- Snapshot Image -->
                                 <Border Grid.Column="1"
-                                        BackgroundColor="#222"
                                         Stroke="#555"
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 8"
                                         VerticalOptions="Center">
-                                    <Image WidthRequest="160"
-                                            HeightRequest="130"
-                                            Aspect="AspectFill"
-                                            Margin="10,0,0,0">
-                                        <Image.Source>
-                                            <FileImageSource File="{Binding MapImagePath, Converter={StaticResource FilePathToImageSourceConverter}}" />
-                                        </Image.Source>
-                                    </Image>
+                                    <Image Source="{Binding MapImage}"
+                                           WidthRequest="160"
+                                           HeightRequest="130"
+                                           Aspect="AspectFill"
+                                           Margin="10,0,0,0" />
                                 </Border>
-
                             </Grid>
                         </Border>
                     </SwipeView>
@@ -96,4 +83,3 @@
         </CollectionView>
     </Grid>
 </ContentPage>
-

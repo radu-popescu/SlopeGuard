@@ -16,7 +16,8 @@ public partial class SessionsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await LoadSessions();
+        await viewModel.LoadSessionsAsync();
+        //await LoadSessions();
     }
 
     public async Task LoadSessions()

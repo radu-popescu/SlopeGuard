@@ -21,5 +21,10 @@ namespace SlopeGuard.Models
         public double MaxAltitude { get; set; }
         public string? MapImagePath { get; set; } // path to the session map image
 
+        public ImageSource? MapImage =>
+        !string.IsNullOrWhiteSpace(MapImagePath) && File.Exists(MapImagePath)
+            ? ImageSource.FromFile(MapImagePath)
+            : null;
+
     }
 }

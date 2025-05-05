@@ -255,6 +255,7 @@ public partial class MainPage : ContentPage
         };
 
         await DatabaseService.InsertSessionAsync(session);
+        
 
         await DisplayAlert("SlopeGuard", $"Session Summary:\n" +
                          $"- Duration: {session.Duration}\n" +
@@ -272,7 +273,6 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            // Gather all polyline positions (descents)
             var allLocations = LiveMap.MapElements
                 .OfType<Polyline>()
                 .SelectMany(p => p.Geopath)
@@ -280,40 +280,52 @@ public partial class MainPage : ContentPage
 
             if (allLocations.Count < 2)
             {
-                Console.WriteLine("Not enough points to generate map snapshot.");
+                Console.WriteLine("❌ Not enough points to generate map snapshot.");
                 return;
             }
 
-            // Compute map bounds from all route segments
             var mapSpan = GetBoundingSpan(allLocations);
-
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                LiveMap.MoveToRegion(mapSpan);
-            });
-
-            await Task.Delay(1500); // Let the map render
+            await MainThread.InvokeOnMainThreadAsync(() => LiveMap.MoveToRegion(mapSpan));
+            await Task.Delay(2000); // Increase delay for safety
 
             var snapshot = await LiveMap.CaptureAsync();
-            if (snapshot != null)
-            {
-                using var stream = await snapshot.OpenReadAsync();
-                using var file = File.Create(path);
-                await stream.CopyToAsync(file);
-                await file.FlushAsync(); // ✅ Ensure all data is committed to disk
-                Console.WriteLine($"✅ Snapshot saved to: {path}");
-
-            }
-            else
+            if (snapshot == null)
             {
                 Console.WriteLine("❌ Snapshot capture returned null.");
+                return;
             }
+
+            using var stream = await snapshot.OpenReadAsync();
+            if (stream == null)
+            {
+                Console.WriteLine("❌ Snapshot stream is null.");
+                return;
+            }
+
+            using var memStream = new MemoryStream();
+            await stream.CopyToAsync(memStream);
+            Console.WriteLine($"[DEBUG] Snapshot stream length: {memStream.Length} bytes");
+
+            if (memStream.Length == 0)
+            {
+                Console.WriteLine("❌ Snapshot stream is empty.");
+                return;
+            }
+
+            memStream.Seek(0, SeekOrigin.Begin);
+            using var fileStream = File.Create(path);
+            await memStream.CopyToAsync(fileStream);
+
+            Console.WriteLine($"✅ Snapshot saved to: {path}");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Snapshot error: {ex.Message}");
         }
     }
+
+
+
 
 
 
