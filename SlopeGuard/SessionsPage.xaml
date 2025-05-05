@@ -2,9 +2,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:SlopeGuard.Models"
              xmlns:viewmodels="clr-namespace:SlopeGuard.ViewModels"
+             xmlns:conv="clr-namespace:SlopeGuard.Converters"
              x:Class="SlopeGuard.SessionsPage"
              x:DataType="viewmodels:SessionsViewModel"
              Title="Session History">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:FilePathToImageSourceConverter x:Key="FilePathToImageSourceConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+
     <Grid>
         <!-- Background image -->
         <Image Source="background.png"
@@ -69,10 +78,12 @@
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 8"
                                         VerticalOptions="Center">
-                                    <Image Source="{Binding MapImagePath}"
-                                           HeightRequest="120"
-                                           WidthRequest="160"
-                                           Aspect="AspectFill" />
+                                    <Image Source="{Binding MapImagePath, Converter={StaticResource FilePathToImageSourceConverter}}"
+                                        WidthRequest="160"
+                                        HeightRequest="130"
+                                        Aspect="AspectFill"
+                                        Margin="10,0,0,0" />
+
                                 </Border>
                             </Grid>
                         </Border>
@@ -82,3 +93,4 @@
         </CollectionView>
     </Grid>
 </ContentPage>
+

@@ -11,6 +11,7 @@ using Microsoft.Maui.Maps;
 using Microsoft.Maui.Controls.Maps;
 
 
+
 namespace SlopeGuard;
 
 public partial class MainPage : ContentPage
@@ -271,20 +272,27 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var allPoints = allRouteLines.SelectMany(l => l.Geopath).ToList();
-            if (allPoints.Count < 2)
+            // Gather all polyline positions (descents)
+            var allLocations = LiveMap.MapElements
+                .OfType<Polyline>()
+                .SelectMany(p => p.Geopath)
+                .ToList();
+
+            if (allLocations.Count < 2)
             {
                 Console.WriteLine("Not enough points to generate map snapshot.");
                 return;
             }
 
-            var mapSpan = GetBoundingSpan(allPoints);
+            // Compute map bounds from all route segments
+            var mapSpan = GetBoundingSpan(allLocations);
+
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 LiveMap.MoveToRegion(mapSpan);
             });
 
-            await Task.Delay(1500);
+            await Task.Delay(1500); // Let the map render
 
             var snapshot = await LiveMap.CaptureAsync();
             if (snapshot != null)
@@ -292,13 +300,20 @@ public partial class MainPage : ContentPage
                 using var stream = await snapshot.OpenReadAsync();
                 using var file = File.Create(path);
                 await stream.CopyToAsync(file);
+                Console.WriteLine($"✅ Snapshot saved to: {path}");
+            }
+            else
+            {
+                Console.WriteLine("❌ Snapshot capture returned null.");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Snapshot error: {ex.Message}");
+            Console.WriteLine($"❌ Snapshot error: {ex.Message}");
         }
     }
+
+
 
 
     private MapSpan GetBoundingSpan(IEnumerable<Location> positions)
