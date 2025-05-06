@@ -204,6 +204,7 @@ public partial class MainPage : ContentPage
                     LiveMap.MoveToRegion(MapSpan.FromCenterAndRadius(new Location(location.Latitude, location.Longitude), Distance.FromKilometers(0.3)));
                     if (isDescending)
                         currentRouteLine.Geopath.Add(new Location(location.Latitude, location.Longitude));
+                    Console.WriteLine($"[DEBUG] Added point: {location.Latitude}, {location.Longitude}");
                 });
             }
         }
@@ -240,12 +241,13 @@ public partial class MainPage : ContentPage
         //string filePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
 
         // Collect all route points
-        var routePoints = allRouteLines
+        var allLocations = LiveMap.MapElements
+            .OfType<Polyline>()
             .SelectMany(p => p.Geopath)
-            .Select(loc => new Location(loc.Latitude, loc.Longitude))
             .ToList();
 
-        await MapSnapshotService.SaveSnapshotAsync(filePath, routePoints);
+        await MapSnapshotService.SaveSnapshotAsync(filePath, allLocations);
+
 
 
 

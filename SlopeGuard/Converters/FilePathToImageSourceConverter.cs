@@ -13,23 +13,29 @@ namespace SlopeGuard.Converters
 
             if (value is string path && !string.IsNullOrWhiteSpace(path) && File.Exists(path))
             {
-                Console.WriteLine($"[Converter] Loading image from: {path}");
+                Console.WriteLine($"[Converter] Loading image via stream: {path}");
                 try
                 {
-                    return ImageSource.FromStream(() => File.OpenRead(path));
+                    return ImageSource.FromStream(() =>
+                    {
+                        var stream = File.OpenRead(path);
+                        Console.WriteLine($"[Converter] Stream opened, length: {stream.Length} bytes");
+                        return stream;
+                    });
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[Converter] Error loading image: {ex.Message}");
+                    Console.WriteLine($"[Converter] Error opening image stream: {ex}");
                 }
             }
             else
             {
-                Console.WriteLine($"[Converter] File not found or invalid path: {value}");
+                Console.WriteLine($"[Converter] Invalid or missing file: {value}");
             }
 
             return null;
         }
+
 
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
