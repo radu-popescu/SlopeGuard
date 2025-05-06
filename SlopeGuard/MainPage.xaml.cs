@@ -239,8 +239,15 @@ public partial class MainPage : ContentPage
         string filePath = Path.Combine(FileSystem.AppDataDirectory, filename);
         //string filePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
 
+        // Collect all route points
+        var routePoints = allRouteLines
+            .SelectMany(p => p.Geopath)
+            .Select(loc => new Location(loc.Latitude, loc.Longitude))
+            .ToList();
 
-        await SaveMapSnapshotAsync(filePath);
+        await MapSnapshotService.SaveSnapshotAsync(filePath, routePoints);
+
+
 
         var session = new SkiSession
         {
