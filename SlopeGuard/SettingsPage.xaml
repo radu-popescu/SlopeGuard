@@ -45,11 +45,58 @@
             <Button x:Name="SaveButton"
                     Text="Save"
                     Clicked="OnSaveClicked"
-                    BackgroundColor="DarkGreen"
+                    BackgroundColor="#333"
                     TextColor="White"
                     CornerRadius="25"
                     WidthRequest="200"
                     HorizontalOptions="Center"/>
+
+            
+
+            <Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Generate Pairing GUID" FontSize="16" TextColor="White" />
+                    <!-- GUID Display Label in a gray box -->
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Entry x:Name="GuidLabel" Text="No GUID generated yet"
+                               VerticalOptions="Center"
+                               BackgroundColor="#333"
+                               TextColor="White"
+                               WidthRequest="280"
+                               HorizontalTextAlignment="Start"
+                               IsReadOnly="True"/>
+                        <!-- Copy Button in a dark gray box with white text -->
+                        <Button x:Name="CopyGuidButton" Text="Copy" Clicked="OnCopyGuidButtonClicked" 
+                                BackgroundColor="#333" TextColor="White" Padding="5" 
+                                HorizontalOptions="Start" />
+                    </StackLayout>
+
+                    <!-- Generate GUID Button -->
+                    <Button x:Name="GenerateGuidButton" Text="Generate GUID" 
+                            Clicked="OnGenerateGuidButtonClicked" BackgroundColor="#333" TextColor="White" />
+                </VerticalStackLayout>
+            </Border>
+
+            
+
+            <Border StrokeThickness="1" Stroke="#444" BackgroundColor="#1e1e1e" StrokeShape="RoundRectangle 12" Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <!-- Entry for GUID and Pairing Button -->
+                    <Label Text="Enter Pairing GUID" FontSize="16" TextColor="White" />
+                    <Entry x:Name="PairingGuidEntry"
+                           Placeholder="Enter GUID for pairing"
+                           IsReadOnly="False"
+                           TextColor="White"
+                           BackgroundColor="#333"
+                           PlaceholderColor="White" />
+                    <Button x:Name="StartPairingButton" Text="Start Pairing" 
+                            Clicked="OnStartPairingButtonClicked" IsEnabled="False" BackgroundColor="#333" TextColor="White" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Pairing Feedback -->
+            <Label x:Name="PairingFeedbackLabel" Text="" TextColor="Red" IsVisible="False" />
+
         </VerticalStackLayout>
     </Grid>
 </ContentPage>
