@@ -47,9 +47,12 @@ public partial class MainPage : ContentPage
     DateTime lastAlertTime = DateTime.MinValue;
     TimeSpan alertCooldown = TimeSpan.FromSeconds(10);
 
-    public MainPage()
+    private readonly FirebaseService _firebaseService;
+
+    public MainPage(FirebaseService firebaseService)
     {
         InitializeComponent();
+        _firebaseService = firebaseService;
 #if ANDROID || IOS
         MapBorder.IsVisible = true;
 #else
