@@ -138,7 +138,7 @@
 
                         <!-- Speed Limit -->
                         <Button Grid.Column="2"
-                                Text="Speed"
+                                Text="Settings"
                                 Clicked="OnSettingsClicked"
                                 BackgroundColor="#333"
                                 TextColor="White"

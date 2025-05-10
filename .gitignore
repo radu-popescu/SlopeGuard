@@ -13,7 +13,8 @@
 # === Android secrets ===
 Platforms/Android/secrets.env
 Platforms/Android/Resources/values/google_maps_api.xml
-
+Platforms/Android/google-services.json
+Platforms/iOS/GoogleService-Info.plist
 
 
 # User-specific files (MonoDevelop/Xamarin Studio)

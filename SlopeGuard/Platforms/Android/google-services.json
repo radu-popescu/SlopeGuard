@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "636929484685",
+    "project_id": "slopeguard-8c766",
+    "storage_bucket": "slopeguard-8c766.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:636929484685:android:25bae18e7b817065e9ffc4",
+        "android_client_info": {
+          "package_name": "com.companyname.slopeguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoQvV9ZeKMaUFJntU0d3OLwalIcNbTggI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
