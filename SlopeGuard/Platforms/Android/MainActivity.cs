@@ -42,10 +42,18 @@ namespace SlopeGuard
             // 2) Verify that the plugin injected google_app_id
             try
             {
-                int resId = Resources.GetIdentifier("google_app_id", "string", PackageName);
+                var androidRes = base.Resources!;
+                int resId = androidRes.GetIdentifier(
+                    "google_app_id",      // name
+                    "string",             // type
+                     PackageName           // your package
+                );
+
+                //int resId = Resources.GetIdentifier("google_app_id", "string", PackageName);
                 if (resId != 0)
                 {
-                    var googleAppId = Resources.GetString(resId);
+                    string googleAppId = androidRes.GetString(resId);
+                    //var googleAppId = Resources.GetString(resId);
                     Console.WriteLine($"[MainActivity] Resource google_app_id = '{googleAppId}'");
                 }
                 else
