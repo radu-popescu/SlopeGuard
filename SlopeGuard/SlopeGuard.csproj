@@ -40,12 +40,6 @@
 	</ItemGroup>
 
 	<!-- Hide secrets from being packed -->
-	<ItemGroup>
-		<None Remove="Platforms\Android\secrets.env" />
-	</ItemGroup>
-	<ItemGroup>
-		<MauiAsset Include="Platforms\Android\secrets.env" />
-	</ItemGroup>
 
 	<!-- Packages -->
 	<ItemGroup>
@@ -60,6 +54,34 @@
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.0" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 	</ItemGroup>
+
+	<!-- inside SlopeGuard.csproj -->
+
+	<!-- 1) Turn on the Gradle plugin for Android -->
+	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-android'">
+		<AndroidEnableGoogleServices>true</AndroidEnableGoogleServices>
+		<!-- (optionally disable FastDev so the plugin can embed resources) -->
+		<AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+	</PropertyGroup>
+
+	<!-- 2) Include the JSON from the project root -->
+	<ItemGroup Condition="'$(TargetFramework)'=='net9.0-android'">
+		<GoogleServicesJson Include="..\google-services.json" />
+	</ItemGroup>
+
+
+
+	<!-- only load RemoteConfig on Android -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
+		<PackageReference Include="Plugin.Firebase.RemoteConfig" Version="3.1.1" />
+	</ItemGroup>
+
+	<!-- only load RemoteConfig on iOS -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-ios'">
+		<PackageReference Include="Plugin.Firebase.RemoteConfig" Version="3.1.1" />
+	</ItemGroup>
+
+
 
 	<!-- XAML pages -->
 	<ItemGroup>

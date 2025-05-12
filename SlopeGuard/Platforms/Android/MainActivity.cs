@@ -1,77 +1,114 @@
 ﻿using Android.App;
 using Android.Content.PM;
 using Android.OS;
-using Microsoft.Maui.ApplicationModel;
-using System.IO;
-using System.Linq;
 using Android.Gms.Maps;
+using Plugin.Firebase.RemoteConfig;
+using Microsoft.Maui.Devices;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Firebase;
 
 namespace SlopeGuard
 {
     [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true,
-              LaunchMode = LaunchMode.SingleTop,
-              ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation |
-                                     ConfigChanges.UiMode | ConfigChanges.ScreenLayout |
-                                     ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
+              ConfigurationChanges = ConfigChanges.ScreenSize |
+                                     ConfigChanges.Orientation |
+                                     ConfigChanges.UiMode |
+                                     ConfigChanges.ScreenLayout |
+                                     ConfigChanges.SmallestScreenSize |
+                                     ConfigChanges.Density)]
+
     public class MainActivity : MauiAppCompatActivity
     {
         protected override void OnCreate(Bundle? savedInstanceState)
         {
-            base.OnCreate(savedInstanceState);
+            Console.WriteLine("[MainActivity] OnCreate entered");
 
+            base.OnCreate(savedInstanceState);
             Platform.Init(this, savedInstanceState);
 
-            // ✅ Load API key and set it at runtime
-            string apiKey = LoadGoogleMapsApiKey();
-            if (!string.IsNullOrEmpty(apiKey))
-            {
-                MapsInitializer.Initialize(this);
-                //MapView.SetApiKey(apiKey);
-            }
-        }
-
-        private string LoadGoogleMapsApiKey()
-        {
+            // 1) Initialize default FirebaseApp (via google-services.json)
             try
             {
-                using var stream = Assets?.Open("Platforms/Android/secrets.env");
-                if (stream == null)
-                {
-                    Android.Util.Log.Warn("SlopeGuard", "secrets.env file not found in Assets.");
-                    return string.Empty;
-                }
-
-                using var reader = new StreamReader(stream);
-                while (!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(line) && line.TrimStart().StartsWith("GOOGLE_MAPS_API_KEY="))
-                    {
-                        var parts = line.Split('=', 2);
-                        if (parts.Length == 2)
-                            return parts[1].Trim();
-                    }
-                }
-
-                Android.Util.Log.Warn("SlopeGuard", "GOOGLE_MAPS_API_KEY not found in secrets.env.");
-                return string.Empty;
+                FirebaseApp.InitializeApp(this);
+                Console.WriteLine($"[MainActivity] FirebaseApp.Instance.Name = '{FirebaseApp.Instance?.Name}'");
             }
             catch (Exception ex)
             {
-                Android.Util.Log.Error("SlopeGuard", $"Failed to load API key: {ex.Message}");
-                return string.Empty;
+                Console.WriteLine($"[MainActivity] ❌ FirebaseApp.InitializeApp failed: {ex.Message}");
+            }
+
+            // 2) Verify that the plugin injected google_app_id
+            try
+            {
+                int resId = Resources.GetIdentifier("google_app_id", "string", PackageName);
+                if (resId != 0)
+                {
+                    var googleAppId = Resources.GetString(resId);
+                    Console.WriteLine($"[MainActivity] Resource google_app_id = '{googleAppId}'");
+                }
+                else
+                {
+                    Console.WriteLine("[MainActivity] Resource google_app_id not found (resId=0)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MainActivity] ❌ reading google_app_id: {ex.Message}");
+            }
+
+            // 3) Kick off Remote Config fetch
+            _ = InitRemoteConfigAsync();
+
+            // 4) If RC has provided a maps key, initialize Maps
+            var mapsKey = AppConfig.MapsKey;
+            Console.WriteLine($"[MainActivity] AppConfig.MapsKey = '{mapsKey}'");
+            if (!string.IsNullOrWhiteSpace(mapsKey))
+            {
+                MapsInitializer.Initialize(this);
+                Console.WriteLine("[MainActivity] MapsInitializer.Initialize called");
             }
         }
 
+
+        async Task InitRemoteConfigAsync()
+        {
+            Console.WriteLine("[MainActivity] InitRemoteConfigAsync starting");
+            try
+            {
+                var rc = CrossFirebaseRemoteConfig.Current;
+                Console.WriteLine("[MainActivity] Obtained CrossFirebaseRemoteConfig.Current");
+
+                await rc.SetDefaultsAsync(new Dictionary<string, object>
+                {
+                    ["maps_api_key"] = "",
+                    ["firebase_api_key_android"] = "",
+                    ["firebase_api_key_ios"] = ""
+                });
+                Console.WriteLine("[MainActivity] SetDefaultsAsync done");
+
+                await rc.FetchAndActivateAsync();
+                Console.WriteLine("[MainActivity] FetchAndActivateAsync done");
+
+                AppConfig.MapsKey = rc.GetString("maps_api_key");
+                AppConfig.FirebaseKey = DeviceInfo.Platform == DevicePlatform.Android
+                    ? rc.GetString("firebase_api_key_android")
+                    : rc.GetString("firebase_api_key_ios");
+
+                Console.WriteLine($"[MainActivity] RC → MapsKey = '{AppConfig.MapsKey}'");
+                Console.WriteLine($"[MainActivity] RC → FirebaseKey = '{AppConfig.FirebaseKey}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MainActivity] ❌ Remote Config init FAILED: {ex}");
+            }
+        }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
         {
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-
-            if ((int)Build.VERSION.SdkInt >= 23)
-            {
-                Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-            }
+            Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
 }

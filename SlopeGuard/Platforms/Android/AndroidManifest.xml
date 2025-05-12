@@ -2,25 +2,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.companyname.slopeguard">
 
-  <!-- Permissions must be declared before the application block -->
-  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-  <uses-permission android:name="android.permission.INTERNET" />
-  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+	<!-- Permissions -->
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-  <application
-      android:allowBackup="true"
-      android:icon="@mipmap/appicon"
-      android:supportsRtl="true"
-      android:theme="@style/Maui.SplashTheme">
+	<application
+		android:allowBackup="true"
+		android:icon="@mipmap/appicon"
+		android:supportsRtl="true"
+		android:theme="@style/Maui.SplashTheme">
 
-    <uses-library android:name="org.apache.http.legacy" android:required="false" />
+		<uses-library android:name="org.apache.http.legacy" android:required="false" />
 
-    <!-- Google Maps API Key -->
-    <meta-data android:name="com.google.android.geo.API_KEY"
-           android:value="@string/google_maps_key" />
+		<!-- Google Maps API Key (from Android resources) -->
+		<meta-data
+			android:name="com.google.android.geo.API_KEY"
+			android:value="@string/google_maps_key" />
 
+		<!-- Optional: if you want to supply defaults via an XML resource,
+         create res/xml/remote_config_defaults.xml and uncomment this:
+    <meta-data
+        android:name="com.google.firebase.remoteconfig.KEY"
+        android:value="@xml/remote_config_defaults" />
+    -->
 
-  </application>
+	</application>
 </manifest>

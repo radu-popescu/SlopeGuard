@@ -1,6 +1,7 @@
 ﻿using Firebase.Database;
 using Firebase.Database.Query;
 using SlopeGuard.Models;
+using System;
 using System.Threading.Tasks;
 
 namespace SlopeGuard.Services
@@ -11,11 +12,20 @@ namespace SlopeGuard.Services
 
         public FirebaseService()
         {
-            // Initialize Firebase client with your Firebase Database URL
-            _firebaseClient = new FirebaseClient("https://your-firebase-database-url.firebaseio.com/");
+            var baseUrl = "https://slopeguard-8c766-default-rtdb.europe-west1.firebasedatabase.app/";
+
+            _firebaseClient = new FirebaseClient(
+                baseUrl,
+                new FirebaseOptions
+                {
+                    // each time the client needs a token, it'll pull the latest value
+                    AuthTokenAsyncFactory = () => Task.FromResult(AppConfig.FirebaseKey ?? string.Empty)
+                });
         }
 
-        // Method to write skier data to Firebase
+        /// <summary>
+        /// Writes the latest skier snapshot under /sessions/{sessionId}/skier_data
+        /// </summary>
         public async Task WriteSkierData(string sessionId, SkierData skierData)
         {
             await _firebaseClient
@@ -25,15 +35,16 @@ namespace SlopeGuard.Services
                 .PutAsync(skierData);
         }
 
-        // Method to read skier data from Firebase
+        /// <summary>
+        /// Reads the skier snapshot from /sessions/{sessionId}/skier_data
+        /// </summary>
         public async Task<SkierData> ReadSkierData(string sessionId)
         {
-            var skierData = await _firebaseClient
+            return await _firebaseClient
                 .Child("sessions")
                 .Child(sessionId)
                 .Child("skier_data")
                 .OnceSingleAsync<SkierData>();
-            return skierData;
         }
     }
 }
