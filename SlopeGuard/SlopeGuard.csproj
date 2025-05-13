@@ -35,9 +35,7 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <AndroidResource Include="Platforms\Android\Resources\values\google_maps_api.xml" />
-	</ItemGroup>
+	
 
 	<!-- Hide secrets from being packed -->
 
@@ -67,6 +65,16 @@
 	<!-- 2) Include the JSON from the project root -->
 	<ItemGroup Condition="'$(TargetFramework)'=='net9.0-android'">
 		<GoogleServicesJson Include="..\google-services.json" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)'=='net9.0-android'">
+		<!-- make sure Google’s Maven repo is available -->
+		<AndroidMavenRepository Include="https://dl.google.com/dl/android/maven2/" />
+
+		<!-- pull in the new v3.x Maps SDK -->
+		<AndroidMavenPackage Include="com.google.android.libraries.maps:maps" Version="3.1.0" />
+		<!-- optional: if you need the Kotlin extensions too -->
+		<AndroidMavenPackage Include="com.google.android.libraries.maps:maps-ktx" Version="3.1.0" />
 	</ItemGroup>
 
 

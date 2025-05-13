@@ -87,14 +87,29 @@
                         HeightRequest="200"
                         Margin="0,12,0,0"
                         IsVisible="False">
-                    <maps:Map x:Name="LiveMap"
-                                IsShowingUser="True"
-                                MapType="Street"
-                                HeightRequest="200"
-                                HorizontalOptions="Fill"
-                                VerticalOptions="Fill"
-                                Margin="0"  />
+
+                    <!-- single Content child: a Grid -->
+                    <Grid>
+                        <!-- shows while waiting -->
+                        <ActivityIndicator
+                            x:Name="LoadingIndicator"
+                            IsRunning="True"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"/>
+
+                        <!-- your map, initially hidden -->
+                        <maps:Map
+                            x:Name="LiveMap"
+                            IsShowingUser="True"
+                            MapType="Street"
+                            HeightRequest="200"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Fill"
+                            Margin="0"
+                            IsVisible="False"/>
+                    </Grid>
                 </Border>
+
 
 
                 <!-- Action Buttons -->
