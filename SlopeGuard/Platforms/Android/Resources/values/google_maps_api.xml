@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!--
+      Your Google Maps API key. Make sure this matches the key you
+      have enabled for "Maps SDK for Android" in the Google Cloud console.
+    -->
+	<string name="google_maps_api_key">AIzaSyBhdcSTWK54nSkxv6-pTO_HimPdcOkLk0E</string>
+</resources>

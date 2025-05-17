@@ -36,7 +36,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <AndroidResource Include="Platforms\Android\Resources\values\google_maps_api.xml" />
+	  <AndroidResource Remove="Platforms\Android\Resources\values\google_maps_api.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Platforms\Android\Resources\values\google_maps_api.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <AndroidResourceAnalysisConfig Include="Platforms\Android\Resources\values\google_maps_api.xml" />
 	</ItemGroup>
 
 	<!-- Hide secrets from being packed -->
@@ -53,6 +61,7 @@
 		<PackageReference Include="SkiaSharp" Version="3.119.0" />
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.0" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<AndroidResource Include="Platforms\Android\Resources\values\google_maps_api.xml" />
 	</ItemGroup>
 
 	<!-- inside SlopeGuard.csproj -->
