@@ -1,5 +1,6 @@
 ﻿using Firebase.Database;
 using Firebase.Database.Query;
+using Firebase.Database.Streaming;
 using SlopeGuard.Models;
 using System;
 using System.Threading.Tasks;
@@ -21,6 +22,46 @@ namespace SlopeGuard.Services
                     // each time the client needs a token, it'll pull the latest value
                     AuthTokenAsyncFactory = () => Task.FromResult(AppConfig.FirebaseKey ?? string.Empty)
                 });
+        }
+
+        // Save live session data (called by skier device)
+        public async Task SaveLiveSessionDataAsync(string guid, LiveSessionData data)
+        {
+            await _firebaseClient
+                .Child("sessions")
+                .Child(guid)
+                .Child("live")
+                .PutAsync(data);
+        }
+
+        // Subscribe to live session data (called by viewer device)
+        public IObservable<FirebaseEvent<LiveSessionData>> SubscribeToLiveSessionData(string guid)
+        {
+            return _firebaseClient
+                .Child("sessions")
+                .Child(guid)
+                .Child("live")
+                .AsObservable<LiveSessionData>();
+        }
+
+        // Update session state (active/inactive)
+        public async Task UpdateSessionStateAsync(string guid, bool isActive)
+        {
+            await _firebaseClient
+                .Child("sessions")
+                .Child(guid)
+                .Child("state")
+                .PutAsync(isActive ? "active" : "inactive");
+        }
+
+        // Subscribe to session state (viewer listens)
+        public IObservable<FirebaseEvent<string>> SubscribeToSessionState(string guid)
+        {
+            return _firebaseClient
+                .Child("sessions")
+                .Child(guid)
+                .Child("state")
+                .AsObservable<string>();
         }
 
         /// <summary>

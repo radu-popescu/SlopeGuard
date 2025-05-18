@@ -9,6 +9,7 @@ using Plugin.Maui.Audio;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Maps;
 using Microsoft.Maui.Controls.Maps;
+using System;
 
 
 
@@ -49,6 +50,25 @@ public partial class MainPage : ContentPage
 
     private readonly FirebaseService _firebaseService;
 
+    private IDisposable _liveDataSubscription;
+    private IDisposable _sessionStateSubscription;
+    private bool _isViewer; // true if this device is viewer, false if skier
+    private string _pairingGuid; // set this when pairing is complete
+    private CancellationTokenSource _broadcastCts;
+
+    public bool IsStartEnabled
+    {
+        get => StartButton.IsEnabled;
+        set => StartButton.IsEnabled = value;
+    }
+
+    public bool IsStopEnabled
+    {
+        get => StopButton.IsEnabled;
+        set => StopButton.IsEnabled = value;
+    }
+
+
     public MainPage(FirebaseService firebaseService)
     {
         InitializeComponent();
@@ -66,6 +86,15 @@ public partial class MainPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+
+        // [PAIRING LOGIC]
+        if (_isViewer && !string.IsNullOrWhiteSpace(_pairingGuid))
+        {
+            StartButton.Text = "Waiting…";
+            StopButton.Text = "Disabled";
+        }
+
+
         _ = CenterMapOnCurrentLocationAsync();
     }
 
@@ -96,6 +125,34 @@ public partial class MainPage : ContentPage
 
     private async void OnStartClicked(object sender, EventArgs e)
     {
+        // [PAIRING LOGIC] 
+        if (!string.IsNullOrWhiteSpace(_pairingGuid))
+        {
+            if (_isViewer)
+            {
+                // Viewer device: Subscribe to Firebase and disable controls
+                StartButton.IsEnabled = false;
+                StopButton.IsEnabled = false;
+
+                // Subscribe to live session data
+                _liveDataSubscription = _firebaseService.SubscribeToLiveSessionData(_pairingGuid)
+                    .Subscribe(OnLiveDataReceived);
+
+                // Subscribe to session state changes
+                _sessionStateSubscription = _firebaseService.SubscribeToSessionState(_pairingGuid)
+                    .Subscribe(OnSessionStateChanged);
+
+                return; // Viewer should not run local tracking!
+            }
+            else
+            {
+                // Skier: set session state as active and start broadcasting
+                await _firebaseService.UpdateSessionStateAsync(_pairingGuid, true);
+                StartBroadcastingLiveSession();
+            }
+        }
+
+        // [Solo operation as before]
         var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
         if (status != PermissionStatus.Granted)
         {
@@ -118,6 +175,8 @@ public partial class MainPage : ContentPage
 
         await StartTrackingSpeed(cts.Token);
     }
+
+
 
     private async Task StartTrackingSpeed(CancellationToken token)
     {
@@ -219,6 +278,78 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // [PAIRING LOGIC] Broadcast live data for skier devices (runs in background)
+    private async void StartBroadcastingLiveSession()
+    {
+        _broadcastCts = new CancellationTokenSource();
+        try
+        {
+            while (isTracking && _broadcastCts != null && !_broadcastCts.IsCancellationRequested)
+            {
+                var data = new LiveSessionData
+                {
+                    Speed = double.TryParse(SpeedLabelValue.Text, out var spd) ? spd : 0,
+                    Distance = totalDistanceKm,
+                    Altitude = lastLocation?.Altitude ?? 0,
+                    Duration = stopwatch.Elapsed,
+                    Ascents = ascents,
+                    Descents = descents,
+                    Route = LiveMap.MapElements
+                        .OfType<Polyline>()
+                        .SelectMany(p => p.Geopath)
+                        .Select(loc => new LocationPoint { Latitude = loc.Latitude, Longitude = loc.Longitude })
+                        .ToList(),
+                    Timestamp = DateTime.UtcNow
+                };
+                await _firebaseService.SaveLiveSessionDataAsync(_pairingGuid, data);
+                await Task.Delay(1000);
+            }
+        }
+        catch { /* ignore for now */ }
+    }
+
+    // [PAIRING LOGIC] Viewer: Handle received data and update UI
+    private void OnLiveDataReceived(Firebase.Database.Streaming.FirebaseEvent<LiveSessionData> evt)
+    {
+        if (evt.Object is LiveSessionData data)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                SpeedLabelValue.Text = $"{data.Speed:F1}";
+                AltitudeLabelValue.Text = $"{data.Altitude:F0}";
+                DurationLabelValue.Text = $"{data.Duration:hh\\:mm\\:ss}";
+                AscentsLabelValue.Text = data.Ascents.ToString();
+                DescentsLabelValue.Text = data.Descents.ToString();
+                DistanceLabelValue.Text = $"{data.Distance:F1}";
+
+                // Update map polylines
+                LiveMap.MapElements.Clear();
+                var polyline = CreateNewPolyline();
+                foreach (var pt in data.Route)
+                    polyline.Geopath.Add(new Location(pt.Latitude, pt.Longitude));
+                LiveMap.MapElements.Add(polyline);
+            });
+        }
+    }
+
+    // [PAIRING LOGIC] Viewer: Handle session state changes (stop session if needed)
+    private void OnSessionStateChanged(Firebase.Database.Streaming.FirebaseEvent<string> evt)
+    {
+        if (evt.Object == "inactive")
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                ResetSessionData();
+                StartButton.IsEnabled = true;
+                StopButton.IsEnabled = false;
+            });
+
+            // Clean up
+            _liveDataSubscription?.Dispose();
+            _sessionStateSubscription?.Dispose();
+        }
+    }
+
     private Polyline CreateNewPolyline()
     {
         var color = descentColors[descents % descentColors.Count];
@@ -231,6 +362,24 @@ public partial class MainPage : ContentPage
 
     private async void OnStopClicked(object sender, EventArgs e)
     {
+        // [PAIRING LOGIC] 
+        if (!string.IsNullOrWhiteSpace(_pairingGuid))
+        {
+            if (_isViewer)
+            {
+                // Viewer should not stop session, just unsubscribe
+                _liveDataSubscription?.Dispose();
+                _sessionStateSubscription?.Dispose();
+                return;
+            }
+            else
+            {
+                // Skier: set session state as inactive and stop broadcasting
+                await _firebaseService.UpdateSessionStateAsync(_pairingGuid, false);
+                _broadcastCts?.Cancel();
+            }
+        }
+
         if (!isTracking) return;
 
         isTracking = false;
