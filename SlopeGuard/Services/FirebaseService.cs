@@ -46,5 +46,26 @@ namespace SlopeGuard.Services
                 .Child("skier_data")
                 .OnceSingleAsync<SkierData>();
         }
+
+        public async Task SavePairingGuidAsync(string guid, object metadata = null)
+        {
+            // Replace "pairings" with your actual Firebase path
+            await _firebaseClient
+                .Child("pairings")
+                .Child(guid)
+                .PutAsync(metadata ?? new { created = DateTime.UtcNow });
+        }
+
+
+        public async Task<bool> DoesPairingGuidExistAsync(string guid)
+        {
+            // Replace with your actual Firebase path and SDK usage
+            var pairingNode = await _firebaseClient
+                .Child("pairings")
+                .Child(guid)
+                .OnceSingleAsync<object>();
+            return pairingNode != null;
+        }
+
     }
 }

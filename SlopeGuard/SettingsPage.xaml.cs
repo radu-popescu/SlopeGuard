@@ -19,6 +19,8 @@ public partial class SettingsPage : ContentPage
         AlertSwitch.IsToggled = Preferences.Get("SpeedAlertEnabled", true);
 
         ValidateSpeedInput(SpeedEntry.Text);
+
+        PairingGuidEntry.TextChanged += OnPairingGuidEntryTextChanged;
     }
 
     private void OnSpeedEntryChanged(object sender, TextChangedEventArgs e)
@@ -69,13 +71,16 @@ public partial class SettingsPage : ContentPage
     }
 
     // Generate a new GUID when the button is clicked
-    private void OnGenerateGuidButtonClicked(object sender, EventArgs e)
+    private async void  OnGenerateGuidButtonClicked(object sender, EventArgs e)
     {
-        generatedGuid = Guid.NewGuid().ToString(); // Generate a new GUID
-        GuidLabel.Text = generatedGuid; // Update the GUID label
+        generatedGuid = Guid.NewGuid().ToString();
+        GuidLabel.Text = generatedGuid;
 
         // Enable the "Start Pairing" button
         StartPairingButton.IsEnabled = true;
+
+        // Save the new GUID to Firebase for pairing
+        await _firebaseService.SavePairingGuidAsync(generatedGuid);
 
         // Clear pairing feedback message
         PairingFeedbackLabel.IsVisible = false;
@@ -98,15 +103,18 @@ public partial class SettingsPage : ContentPage
     // Start pairing with the generated GUID
     private async void OnStartPairingButtonClicked(object sender, EventArgs e)
     {
-        if (string.IsNullOrEmpty(generatedGuid))
+        var pairingGuid = PairingGuidEntry.Text;
+
+        if (string.IsNullOrWhiteSpace(pairingGuid) || !Guid.TryParse(pairingGuid, out _))
         {
-            PairingFeedbackLabel.Text = "Please generate a GUID first.";
+            PairingFeedbackLabel.Text = "Please enter a valid GUID for pairing.";
             PairingFeedbackLabel.IsVisible = true;
+            PairingFeedbackLabel.TextColor = Microsoft.Maui.Graphics.Color.FromArgb("#FF0000");
             return;
         }
 
-        // Simulate pairing (e.g., check Firebase, etc.)
-        bool pairingSuccess = await TryPairWithGUID(generatedGuid);
+        // Now try pairing with the entered GUID (not generatedGuid)
+        bool pairingSuccess = await TryPairWithGUID(pairingGuid);
 
         if (pairingSuccess)
         {
@@ -122,10 +130,20 @@ public partial class SettingsPage : ContentPage
         PairingFeedbackLabel.IsVisible = true;
     }
 
-    // Simulate pairing logic (in reality, connect devices via Firebase or another method)
-    private Task<bool> TryPairWithGUID(string guid)
+
+    private void OnPairingGuidEntryTextChanged(object sender, TextChangedEventArgs e)
     {
-        // For now, simulate pairing success after a brief delay
-        return Task.FromResult(true); // This should be replaced with actual pairing logic
+        // Enable if the entry has a valid GUID
+        StartPairingButton.IsEnabled = Guid.TryParse(PairingGuidEntry.Text, out _);
     }
+
+
+    // Simulate pairing logic (in reality, connect devices via Firebase or another method)
+    private async Task<bool> TryPairWithGUID(string guid)
+    {
+        // Query Firebase to check if the GUID exists under the expected node
+        var pairingExists = await _firebaseService.DoesPairingGuidExistAsync(guid);
+        return pairingExists;
+    }
+
 }
