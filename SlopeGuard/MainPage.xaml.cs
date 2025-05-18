@@ -87,16 +87,25 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
 
-        // [PAIRING LOGIC]
+        _pairingGuid = Preferences.Get("PairingGuid", string.Empty);
+        _isViewer = Preferences.Get("IsViewer", false);
+
+        Console.WriteLine($"[DEBUG][MainPage] Loaded from Preferences: _pairingGuid={_pairingGuid}, _isViewer={_isViewer}");
+
         if (_isViewer && !string.IsNullOrWhiteSpace(_pairingGuid))
         {
             StartButton.Text = "Waiting…";
             StopButton.Text = "Disabled";
-        }
 
+            // Trigger live data subscription for the viewer
+            Console.WriteLine($"[DEBUG][MainPage] Viewer mode detected, subscribing to live session with GUID {_pairingGuid}");
+            _firebaseService.SubscribeToLiveSessionData(_pairingGuid);
+        }
 
         _ = CenterMapOnCurrentLocationAsync();
     }
+
+
 
     private async Task CenterMapOnCurrentLocationAsync()
     {
@@ -125,11 +134,14 @@ public partial class MainPage : ContentPage
 
     private async void OnStartClicked(object sender, EventArgs e)
     {
+        Console.WriteLine($"[DEBUG][MainPage] OnStartClicked called. _pairingGuid: {_pairingGuid}, _isViewer: {_isViewer}");
         // [PAIRING LOGIC] 
         if (!string.IsNullOrWhiteSpace(_pairingGuid))
         {
+            Console.WriteLine($"[DEBUG][MainPage] Pairing GUID present. Role: {(_isViewer ? "Viewer" : "Skier")}");
             if (_isViewer)
             {
+                Console.WriteLine($"[DEBUG][MainPage] Viewer mode: subscribing to live data and disabling buttons.");
                 // Viewer device: Subscribe to Firebase and disable controls
                 StartButton.IsEnabled = false;
                 StopButton.IsEnabled = false;
@@ -141,14 +153,17 @@ public partial class MainPage : ContentPage
                 // Subscribe to session state changes
                 _sessionStateSubscription = _firebaseService.SubscribeToSessionState(_pairingGuid)
                     .Subscribe(OnSessionStateChanged);
+                Console.WriteLine($"[DEBUG][MainPage] Viewer subscriptions started for GUID: {_pairingGuid}");
 
                 return; // Viewer should not run local tracking!
             }
             else
             {
+                Console.WriteLine($"[DEBUG][MainPage] Skier mode: setting session state to active and starting broadcast.");
                 // Skier: set session state as active and start broadcasting
                 await _firebaseService.UpdateSessionStateAsync(_pairingGuid, true);
                 StartBroadcastingLiveSession();
+                Console.WriteLine($"[DEBUG][MainPage] Skier broadcast started for GUID: {_pairingGuid}");
             }
         }
 
@@ -301,7 +316,9 @@ public partial class MainPage : ContentPage
                         .ToList(),
                     Timestamp = DateTime.UtcNow
                 };
+                Console.WriteLine($"[DEBUG][Skier] Attempting to write LiveSessionData for GUID: {_pairingGuid}, Speed: {data.Speed}, Distance: {data.Distance}, Time: {data.Timestamp}");
                 await _firebaseService.SaveLiveSessionDataAsync(_pairingGuid, data);
+                Console.WriteLine($"[DEBUG][Skier] Finished writing LiveSessionData for GUID: {_pairingGuid}");
                 await Task.Delay(1000);
             }
         }
@@ -311,8 +328,10 @@ public partial class MainPage : ContentPage
     // [PAIRING LOGIC] Viewer: Handle received data and update UI
     private void OnLiveDataReceived(Firebase.Database.Streaming.FirebaseEvent<LiveSessionData> evt)
     {
+        Console.WriteLine($"[DEBUG][Viewer] Live data received event for GUID: {_pairingGuid} - IsNull: {evt.Object == null}");
         if (evt.Object is LiveSessionData data)
         {
+            Console.WriteLine($"[DEBUG][Viewer] LiveSessionData: Speed: {data.Speed}, Distance: {data.Distance}, Time: {data.Timestamp}");
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 SpeedLabelValue.Text = $"{data.Speed:F1}";

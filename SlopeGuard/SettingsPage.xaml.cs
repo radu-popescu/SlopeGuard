@@ -104,31 +104,49 @@ public partial class SettingsPage : ContentPage
     private async void OnStartPairingButtonClicked(object sender, EventArgs e)
     {
         var pairingGuid = PairingGuidEntry.Text;
+        Console.WriteLine($"[DEBUG][Pairing] Start button clicked. Input GUID: {pairingGuid}");
 
         if (string.IsNullOrWhiteSpace(pairingGuid) || !Guid.TryParse(pairingGuid, out _))
         {
             PairingFeedbackLabel.Text = "Please enter a valid GUID for pairing.";
             PairingFeedbackLabel.IsVisible = true;
             PairingFeedbackLabel.TextColor = Microsoft.Maui.Graphics.Color.FromArgb("#FF0000");
+            Console.WriteLine("[DEBUG][Pairing] Invalid GUID entered.");
             return;
         }
 
-        // Now try pairing with the entered GUID (not generatedGuid)
+        // Try pairing (e.g., check if exists in Firebase, etc.)
         bool pairingSuccess = await TryPairWithGUID(pairingGuid);
+        Console.WriteLine($"[DEBUG][Pairing] TryPairWithGUID result: {pairingSuccess}");
 
         if (pairingSuccess)
         {
+            // Save the pairing GUID to app storage or preferences
+            Preferences.Set("PairingGuid", pairingGuid);
+            Preferences.Set("IsViewer", true); // or false if you want the user to select
+
+            Console.WriteLine($"[DEBUG][Pairing] Pairing succeeded. Saved PairingGuid={pairingGuid}, IsViewer=true");
+
+            // Give UI feedback
             PairingFeedbackLabel.Text = "Pairing successful!";
             PairingFeedbackLabel.TextColor = Microsoft.Maui.Graphics.Color.FromArgb("#00FF00");
+            PairingFeedbackLabel.IsVisible = true;
+
+            // Optionally: navigate back to MainPage or reload MainPage to pick up pairing state
+            await Task.Delay(500); // brief pause so user sees feedback
+            Console.WriteLine("[DEBUG][Pairing] Navigating to MainPage.");
+            await Shell.Current.GoToAsync("/mainpage"); // or your MainPage route
         }
         else
         {
             PairingFeedbackLabel.Text = "Pairing failed. Try again.";
             PairingFeedbackLabel.TextColor = Microsoft.Maui.Graphics.Color.FromArgb("#FF0000");
+            PairingFeedbackLabel.IsVisible = true;
+            Console.WriteLine("[DEBUG][Pairing] Pairing failed.");
         }
-
-        PairingFeedbackLabel.IsVisible = true;
     }
+
+
 
 
     private void OnPairingGuidEntryTextChanged(object sender, TextChangedEventArgs e)
@@ -142,7 +160,9 @@ public partial class SettingsPage : ContentPage
     private async Task<bool> TryPairWithGUID(string guid)
     {
         // Query Firebase to check if the GUID exists under the expected node
+        Console.WriteLine($"[DEBUG][Pairing] Checking if GUID exists in Firebase: {guid}");
         var pairingExists = await _firebaseService.DoesPairingGuidExistAsync(guid);
+        Console.WriteLine($"[DEBUG][Pairing] Firebase returned exists={pairingExists} for GUID {guid}");
         return pairingExists;
     }
 

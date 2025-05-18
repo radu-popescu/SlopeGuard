@@ -27,6 +27,7 @@ namespace SlopeGuard.Services
         // Save live session data (called by skier device)
         public async Task SaveLiveSessionDataAsync(string guid, LiveSessionData data)
         {
+            Console.WriteLine($"[DEBUG][FirebaseService] Saving LiveSessionData to /sessions/{guid}/live");
             await _firebaseClient
                 .Child("sessions")
                 .Child(guid)
@@ -37,6 +38,7 @@ namespace SlopeGuard.Services
         // Subscribe to live session data (called by viewer device)
         public IObservable<FirebaseEvent<LiveSessionData>> SubscribeToLiveSessionData(string guid)
         {
+            Console.WriteLine($"[DEBUG][FirebaseService] Subscribing to /sessions/{guid}/live");
             return _firebaseClient
                 .Child("sessions")
                 .Child(guid)
