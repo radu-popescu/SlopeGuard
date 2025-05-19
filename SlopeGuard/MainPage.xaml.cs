@@ -10,6 +10,7 @@ using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Maps;
 using Microsoft.Maui.Controls.Maps;
 using System;
+using Newtonsoft.Json;
 
 
 
@@ -87,6 +88,7 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
 
+        // Always get latest pairing info
         _pairingGuid = Preferences.Get("PairingGuid", string.Empty);
         _isViewer = Preferences.Get("IsViewer", false);
 
@@ -94,16 +96,28 @@ public partial class MainPage : ContentPage
 
         if (_isViewer && !string.IsNullOrWhiteSpace(_pairingGuid))
         {
+            // In viewer mode, lock out controls and start subscription
             StartButton.Text = "Waiting…";
             StopButton.Text = "Disabled";
+            StartButton.IsEnabled = false;
+            StopButton.IsEnabled = false;
 
-            // Trigger live data subscription for the viewer
             Console.WriteLine($"[DEBUG][MainPage] Viewer mode detected, subscribing to live session with GUID {_pairingGuid}");
             _firebaseService.SubscribeToLiveSessionData(_pairingGuid);
+        }
+        else
+        {
+            // No pairing or not viewer — always reset to initial state
+            StartButton.Text = "Start";
+            StopButton.Text = "Stop";
+            StartButton.IsEnabled = true;
+            StopButton.IsEnabled = false;
         }
 
         _ = CenterMapOnCurrentLocationAsync();
     }
+
+
 
 
 
@@ -135,35 +149,50 @@ public partial class MainPage : ContentPage
     private async void OnStartClicked(object sender, EventArgs e)
     {
         Console.WriteLine($"[DEBUG][MainPage] OnStartClicked called. _pairingGuid: {_pairingGuid}, _isViewer: {_isViewer}");
-        // [PAIRING LOGIC] 
+
+        if (isTracking) return; // Don't start if already tracking
+
+        // [PAIRING LOGIC]
         if (!string.IsNullOrWhiteSpace(_pairingGuid))
         {
             Console.WriteLine($"[DEBUG][MainPage] Pairing GUID present. Role: {(_isViewer ? "Viewer" : "Skier")}");
             if (_isViewer)
             {
-                Console.WriteLine($"[DEBUG][MainPage] Viewer mode: subscribing to live data and disabling buttons.");
-                // Viewer device: Subscribe to Firebase and disable controls
+                // Viewer: Subscribe only, don't track or broadcast
                 StartButton.IsEnabled = false;
                 StopButton.IsEnabled = false;
 
-                // Subscribe to live session data
                 _liveDataSubscription = _firebaseService.SubscribeToLiveSessionData(_pairingGuid)
                     .Subscribe(OnLiveDataReceived);
 
-                // Subscribe to session state changes
                 _sessionStateSubscription = _firebaseService.SubscribeToSessionState(_pairingGuid)
                     .Subscribe(OnSessionStateChanged);
-                Console.WriteLine($"[DEBUG][MainPage] Viewer subscriptions started for GUID: {_pairingGuid}");
 
-                return; // Viewer should not run local tracking!
+                Console.WriteLine($"[DEBUG][MainPage] Viewer subscriptions started for GUID: {_pairingGuid}");
+                return;
             }
             else
             {
+                // Skier: set session state, start tracking/broadcasting
                 Console.WriteLine($"[DEBUG][MainPage] Skier mode: setting session state to active and starting broadcast.");
-                // Skier: set session state as active and start broadcasting
                 await _firebaseService.UpdateSessionStateAsync(_pairingGuid, true);
-                StartBroadcastingLiveSession();
+
+                isTracking = true;
+                StartButton.IsEnabled = false;
+                StopButton.IsEnabled = true;
+
+                stopwatch.Restart();
+                cts = new CancellationTokenSource();
+
+                currentRouteLine = CreateNewPolyline();
+                LiveMap.MapElements.Add(currentRouteLine);
+                allRouteLines.Add(currentRouteLine);
+
+                _ = StartTrackingSpeed(cts.Token); // background!
+                StartBroadcastingLiveSession();    // start broadcasting at the same time
+
                 Console.WriteLine($"[DEBUG][MainPage] Skier broadcast started for GUID: {_pairingGuid}");
+                return;
             }
         }
 
@@ -172,10 +201,9 @@ public partial class MainPage : ContentPage
         if (status != PermissionStatus.Granted)
         {
             await DisplayAlert("Permission Denied", "Location permission is required to start tracking.", "OK");
+            isTracking = false;
             return;
         }
-
-        if (isTracking) return;
 
         isTracking = true;
         StartButton.IsEnabled = false;
@@ -190,6 +218,10 @@ public partial class MainPage : ContentPage
 
         await StartTrackingSpeed(cts.Token);
     }
+
+
+
+
 
 
 
@@ -296,6 +328,7 @@ public partial class MainPage : ContentPage
     // [PAIRING LOGIC] Broadcast live data for skier devices (runs in background)
     private async void StartBroadcastingLiveSession()
     {
+        Console.WriteLine($"[DEBUG][Skier] StartBroadcastingLiveSession called; isTracking={isTracking}");
         _broadcastCts = new CancellationTokenSource();
         try
         {
@@ -328,28 +361,53 @@ public partial class MainPage : ContentPage
     // [PAIRING LOGIC] Viewer: Handle received data and update UI
     private void OnLiveDataReceived(Firebase.Database.Streaming.FirebaseEvent<LiveSessionData> evt)
     {
-        Console.WriteLine($"[DEBUG][Viewer] Live data received event for GUID: {_pairingGuid} - IsNull: {evt.Object == null}");
-        if (evt.Object is LiveSessionData data)
-        {
-            Console.WriteLine($"[DEBUG][Viewer] LiveSessionData: Speed: {data.Speed}, Distance: {data.Distance}, Time: {data.Timestamp}");
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                SpeedLabelValue.Text = $"{data.Speed:F1}";
-                AltitudeLabelValue.Text = $"{data.Altitude:F0}";
-                DurationLabelValue.Text = $"{data.Duration:hh\\:mm\\:ss}";
-                AscentsLabelValue.Text = data.Ascents.ToString();
-                DescentsLabelValue.Text = data.Descents.ToString();
-                DistanceLabelValue.Text = $"{data.Distance:F1}";
+        Console.WriteLine($"[DEBUG][Viewer] OnLiveDataReceived called for GUID: {_pairingGuid}");
 
-                // Update map polylines
-                LiveMap.MapElements.Clear();
-                var polyline = CreateNewPolyline();
-                foreach (var pt in data.Route)
-                    polyline.Geopath.Add(new Location(pt.Latitude, pt.Longitude));
-                LiveMap.MapElements.Add(polyline);
-            });
+        if (evt.Object == null)
+        {
+            Console.WriteLine("[DEBUG][Viewer] evt.Object is null.");
+            return;
         }
+
+        var data = evt.Object;
+        Console.WriteLine($"[DEBUG][Viewer] LiveSessionData: {JsonConvert.SerializeObject(data)}");
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            // Defensive: Check if the controls are not null (in case of fast reload/navigation issues)
+            if (SpeedLabelValue == null || AltitudeLabelValue == null)
+            {
+                Console.WriteLine("[DEBUG][Viewer] One or more UI elements are null. UI not updated.");
+                return;
+            }
+
+            SpeedLabelValue.Text = $"{data.Speed:F1}";
+            AltitudeLabelValue.Text = $"{data.Altitude:F0}";
+            DurationLabelValue.Text = $"{data.Duration:hh\\:mm\\:ss}";
+            AscentsLabelValue.Text = data.Ascents.ToString();
+            DescentsLabelValue.Text = data.Descents.ToString();
+            DistanceLabelValue.Text = $"{data.Distance:F1}";
+
+            // Defensive: Only update the map if ready and route is valid
+            try
+            {
+                LiveMap.MapElements.Clear();
+                if (data.Route != null && data.Route.Count > 0)
+                {
+                    var polyline = CreateNewPolyline();
+                    foreach (var pt in data.Route)
+                        polyline.Geopath.Add(new Location(pt.Latitude, pt.Longitude));
+                    LiveMap.MapElements.Add(polyline);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DEBUG][Viewer] Map update failed: {ex}");
+            }
+        });
     }
+
+
 
     // [PAIRING LOGIC] Viewer: Handle session state changes (stop session if needed)
     private void OnSessionStateChanged(Firebase.Database.Streaming.FirebaseEvent<string> evt)
@@ -381,21 +439,31 @@ public partial class MainPage : ContentPage
 
     private async void OnStopClicked(object sender, EventArgs e)
     {
-        // [PAIRING LOGIC] 
+        // [PAIRING LOGIC]
         if (!string.IsNullOrWhiteSpace(_pairingGuid))
         {
             if (_isViewer)
             {
-                // Viewer should not stop session, just unsubscribe
+                // Viewer: unsubscribe and clear pairing info
                 _liveDataSubscription?.Dispose();
                 _sessionStateSubscription?.Dispose();
+
+                Preferences.Remove("PairingGuid");
+                Preferences.Remove("IsViewer");
+                _pairingGuid = null;
+                _isViewer = false;
                 return;
             }
             else
             {
-                // Skier: set session state as inactive and stop broadcasting
+                // Skier: set session inactive, stop broadcast, clear pairing
                 await _firebaseService.UpdateSessionStateAsync(_pairingGuid, false);
                 _broadcastCts?.Cancel();
+
+                Preferences.Remove("PairingGuid");
+                Preferences.Remove("IsViewer");
+                _pairingGuid = null;
+                _isViewer = false;
             }
         }
 
@@ -409,18 +477,13 @@ public partial class MainPage : ContentPage
 
         string filename = $"SlopeSession_{DateTime.Now:yyyyMMdd_HHmmss}.png";
         string filePath = Path.Combine(FileSystem.AppDataDirectory, filename);
-        //string filePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
 
-        // Collect all route points
         var allLocations = LiveMap.MapElements
             .OfType<Polyline>()
             .SelectMany(p => p.Geopath)
             .ToList();
 
         await MapSnapshotService.SaveSnapshotAsync(filePath, allLocations);
-
-
-
 
         var session = new SkiSession
         {
@@ -435,18 +498,19 @@ public partial class MainPage : ContentPage
         };
 
         await DatabaseService.InsertSessionAsync(session);
-        
 
         await DisplayAlert("SlopeGuard", $"Session Summary:\n" +
-                         $"- Duration: {session.Duration}\n" +
-                         $"- Distance: {session.Distance:F2} km\n" +
-                         $"- Max Speed: {session.MaxSpeed:F1} km/h\n" +
-                         $"- Max Altitude: {session.MaxAltitude}\n" +
-                         $"- Ascents: {session.Ascents}\n" +
-                         $"- Descents: {session.Descents}", "OK");
+            $"- Duration: {session.Duration}\n" +
+            $"- Distance: {session.Distance:F2} km\n" +
+            $"- Max Speed: {session.MaxSpeed:F1} km/h\n" +
+            $"- Max Altitude: {session.MaxAltitude}\n" +
+            $"- Ascents: {session.Ascents}\n" +
+            $"- Descents: {session.Descents}", "OK");
 
         ResetSessionData();
     }
+
+
 
 
     private async Task SaveMapSnapshotAsync(string path)
@@ -555,4 +619,8 @@ public partial class MainPage : ContentPage
     {
         await Shell.Current.GoToAsync("/settings");
     }
+
+
+    
+
 }

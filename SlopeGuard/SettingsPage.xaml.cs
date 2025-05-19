@@ -71,20 +71,27 @@ public partial class SettingsPage : ContentPage
     }
 
     // Generate a new GUID when the button is clicked
-    private async void  OnGenerateGuidButtonClicked(object sender, EventArgs e)
+    private async void OnGenerateGuidButtonClicked(object sender, EventArgs e)
     {
         generatedGuid = Guid.NewGuid().ToString();
         GuidLabel.Text = generatedGuid;
 
         // Enable the "Start Pairing" button
-        StartPairingButton.IsEnabled = true;
+        StartPairingButton.IsEnabled = false;
 
         // Save the new GUID to Firebase for pairing
         await _firebaseService.SavePairingGuidAsync(generatedGuid);
 
+        // Immediately set this device as the skier for the new pairing GUID
+        Preferences.Set("PairingGuid", generatedGuid);
+        Preferences.Set("IsViewer", false); // Mark as skier
+
         // Clear pairing feedback message
         PairingFeedbackLabel.IsVisible = false;
+
+        Console.WriteLine($"[DEBUG][Settings] Generated new GUID: {generatedGuid}, device set as skier.");
     }
+
 
     // Copy the generated GUID to the clipboard
     private void OnCopyGuidButtonClicked(object sender, EventArgs e)
@@ -165,5 +172,16 @@ public partial class SettingsPage : ContentPage
         Console.WriteLine($"[DEBUG][Pairing] Firebase returned exists={pairingExists} for GUID {guid}");
         return pairingExists;
     }
+
+    private async void UnpairButton_Clicked(object sender, EventArgs e)
+    {
+        Preferences.Remove("PairingGuid");
+        Preferences.Remove("IsViewer");
+        await DisplayAlert("Unpaired", "Device unpaired. Restart the app.", "OK");
+    }
+
+
+
+
 
 }

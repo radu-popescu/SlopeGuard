@@ -97,6 +97,14 @@
             <!-- Pairing Feedback -->
             <Label x:Name="PairingFeedbackLabel" Text="" TextColor="Red" IsVisible="False" />
 
+            <Button
+                x:Name="UnpairButton"
+                Text="Unpair Device"
+                Clicked="UnpairButton_Clicked"
+                Margin="0,20,0,0"
+                BackgroundColor="Red"
+                TextColor="White"/>
+
         </VerticalStackLayout>
     </Grid>
 </ContentPage>

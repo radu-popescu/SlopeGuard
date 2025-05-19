@@ -2,8 +2,11 @@
 using Firebase.Database.Query;
 using Firebase.Database.Streaming;
 using SlopeGuard.Models;
+using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
+
 
 namespace SlopeGuard.Services
 {
@@ -39,21 +42,44 @@ namespace SlopeGuard.Services
         public IObservable<FirebaseEvent<LiveSessionData>> SubscribeToLiveSessionData(string guid)
         {
             Console.WriteLine($"[DEBUG][FirebaseService] Subscribing to /sessions/{guid}/live");
-            return _firebaseClient
+            var observable = _firebaseClient
                 .Child("sessions")
                 .Child(guid)
                 .Child("live")
                 .AsObservable<LiveSessionData>();
+
+            // Add inline debug for all received events for this GUID.
+            return Observable.Create<FirebaseEvent<LiveSessionData>>(observer =>
+            {
+                return observable.Subscribe(evt =>
+                {
+                    Console.WriteLine($"[DEBUG][FirebaseService] [LIVE DATA] Event for {guid}: IsNull={evt.Object == null}, Type={evt.EventType}");
+                    observer.OnNext(evt);
+                },
+                ex =>
+                {
+                    Console.WriteLine($"[DEBUG][FirebaseService] [LIVE DATA] Exception for {guid}: {ex}");
+                    observer.OnError(ex);
+                },
+                () =>
+                {
+                    Console.WriteLine($"[DEBUG][FirebaseService] [LIVE DATA] Completed for {guid}");
+                    observer.OnCompleted();
+                });
+            });
         }
+
 
         // Update session state (active/inactive)
         public async Task UpdateSessionStateAsync(string guid, bool isActive)
         {
+            var state = isActive ? "active" : "inactive";
+            var json = JsonConvert.SerializeObject(state); // will wrap in quotes!
             await _firebaseClient
                 .Child("sessions")
                 .Child(guid)
                 .Child("state")
-                .PutAsync(isActive ? "active" : "inactive");
+                .PutAsync(json);
         }
 
         // Subscribe to session state (viewer listens)
