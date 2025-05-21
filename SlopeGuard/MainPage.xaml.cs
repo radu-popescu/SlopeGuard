@@ -107,22 +107,15 @@ public partial class MainPage : ContentPage
             StartButton.IsEnabled = false;
             StopButton.IsEnabled = false;
 
-            Console.WriteLine($"[DEBUG][MainPage] Viewer mode detected, subscribing to live session with GUID {_pairingGuid}");
+            Console.WriteLine($"[DEBUG][MainPage] Viewer mode detected, subscribing (polling) to live session with GUID {_pairingGuid}");
 
+            // --- POLLING subscription, use new method ---
             _liveDataSubscription = _firebaseService
-                .SubscribeToLiveSessionData(_pairingGuid)
-                .Subscribe(evt =>
+                .PollLiveSessionData(_pairingGuid)
+                .Subscribe(data =>
                 {
                     // Show waiting state if no data yet, else update UI
-                    if (evt.Object == null)
-                    {
-                        Console.WriteLine("[DEBUG][Viewer] No live session data yet, still waiting…");
-                        // Optionally update a status label here
-                    }
-                    else
-                    {
-                        OnLiveDataReceived(evt); // update UI with real data
-                    }
+                    OnPolledLiveSessionData(data); // always call, handles null
                 });
         }
         else
@@ -135,6 +128,61 @@ public partial class MainPage : ContentPage
         }
 
         _ = CenterMapOnCurrentLocationAsync();
+    }
+
+
+    private void OnPolledLiveSessionData(LiveSessionData data)
+    {
+        Console.WriteLine($"[DEBUG][Viewer] OnPolledLiveSessionData called for GUID: {_pairingGuid}");
+        if (data == null)
+        {
+            Console.WriteLine("[DEBUG][Viewer] No live session data yet, still waiting…");
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                // Optionally update UI to show waiting state
+                // StatusLabel.Text = "Waiting for skier to start session…";
+            });
+            return;
+        }
+
+        Console.WriteLine($"[DEBUG][Viewer] LiveSessionData: {JsonConvert.SerializeObject(data)}");
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            // Hide waiting message if needed
+            // StatusLabel.Text = "";
+
+            // Defensive: Check if controls exist
+            if (SpeedLabelValue == null || AltitudeLabelValue == null)
+            {
+                Console.WriteLine("[DEBUG][Viewer] One or more UI elements are null. UI not updated.");
+                return;
+            }
+
+            SpeedLabelValue.Text = $"{data.Speed:F1}";
+            AltitudeLabelValue.Text = $"{data.Altitude:F0}";
+            DurationLabelValue.Text = data.Duration.ToString(@"hh\:mm\:ss"); // Already a string
+            AscentsLabelValue.Text = data.Ascents.ToString();
+            DescentsLabelValue.Text = data.Descents.ToString();
+            DistanceLabelValue.Text = $"{data.Distance:F2}";
+
+            // Update map if valid route
+            try
+            {
+                LiveMap?.MapElements?.Clear();
+                if (data.Route != null && data.Route.Count > 0)
+                {
+                    var polyline = CreateNewPolyline();
+                    foreach (var pt in data.Route)
+                        polyline.Geopath.Add(new Location(pt.Latitude, pt.Longitude));
+                    LiveMap.MapElements.Add(polyline);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DEBUG][Viewer] Map update failed: {ex}");
+            }
+        });
     }
 
 
@@ -189,15 +237,37 @@ public partial class MainPage : ContentPage
                 StartButton.IsEnabled = false;
                 StopButton.IsEnabled = false;
 
-                _liveDataSubscription = _firebaseService.SubscribeToLiveSessionData(_pairingGuid)
-                    .Subscribe(OnLiveDataReceived);
+                // --- Comment out/remove the old real-time subscription ---
+                // _liveDataSubscription = _firebaseService.SubscribeToLiveSessionData(_pairingGuid)
+                //     .Subscribe(OnLiveDataReceived);
 
+                // --- Add the polling-based subscription instead ---
+                _liveDataSubscription = _firebaseService.PollLiveSessionData(_pairingGuid)
+                    .Subscribe(OnPolledLiveSessionData);
+
+                // You can keep the session state subscription as it is
                 _sessionStateSubscription = _firebaseService.SubscribeToSessionState(_pairingGuid)
                     .Subscribe(OnSessionStateChanged);
 
-                Console.WriteLine($"[DEBUG][MainPage] Viewer subscriptions started for GUID: {_pairingGuid}");
+                Console.WriteLine($"[DEBUG][MainPage] Viewer polling subscription started for GUID: {_pairingGuid}");
                 return;
             }
+
+            //if (_isViewer)
+            //{
+            //    // Viewer: Subscribe only, don't track or broadcast
+            //    StartButton.IsEnabled = false;
+            //    StopButton.IsEnabled = false;
+
+            //    _liveDataSubscription = _firebaseService.SubscribeToLiveSessionData(_pairingGuid)
+            //        .Subscribe(OnLiveDataReceived);
+
+            //    _sessionStateSubscription = _firebaseService.SubscribeToSessionState(_pairingGuid)
+            //        .Subscribe(OnSessionStateChanged);
+
+            //    Console.WriteLine($"[DEBUG][MainPage] Viewer subscriptions started for GUID: {_pairingGuid}");
+            //    return;
+            //}
             else
             {
                 // Skier: set session state, start tracking/broadcasting
@@ -376,7 +446,9 @@ public partial class MainPage : ContentPage
                         .ToList(),
                     Timestamp = DateTime.UtcNow
                 };
+                Console.WriteLine("[DEBUG][Skier] LiveSessionData JSON: " + JsonConvert.SerializeObject(data));
                 Console.WriteLine($"[DEBUG][Skier] Attempting to write LiveSessionData for GUID: {_pairingGuid}, Speed: {data.Speed}, Distance: {data.Distance}, Time: {data.Timestamp}");
+                
                 await _firebaseService.SaveLiveSessionDataAsync(_pairingGuid, data);
                 Console.WriteLine($"[DEBUG][Skier] Finished writing LiveSessionData for GUID: {_pairingGuid}");
                 await Task.Delay(1000);

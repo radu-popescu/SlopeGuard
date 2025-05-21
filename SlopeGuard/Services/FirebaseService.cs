@@ -39,6 +39,31 @@ namespace SlopeGuard.Services
                 .PutAsync(data);
         }
 
+        public IObservable<LiveSessionData> PollLiveSessionData(string guid, TimeSpan? interval = null)
+        {
+            interval ??= TimeSpan.FromSeconds(1); // Default to 1 second polling
+
+            return Observable.Interval(interval.Value)
+                .SelectMany(async _ =>
+                {
+                    try
+                    {
+                        var data = await _firebaseClient
+                            .Child("sessions")
+                            .Child(guid)
+                            .Child("live")
+                            .OnceSingleAsync<LiveSessionData>();
+                        return data;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ERROR][FirebaseService] Polling failed for {guid}: {ex}");
+                        return null; // Swallow exceptions, emit null on error
+                    }
+                })
+                .Where(data => data != null); // Filter out nulls
+        }
+
         // Subscribe to live session data (called by viewer device)
         public IObservable<FirebaseEvent<LiveSessionData>> SubscribeToLiveSessionData(string guid)
         {
