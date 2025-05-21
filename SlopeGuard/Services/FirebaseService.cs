@@ -17,14 +17,15 @@ namespace SlopeGuard.Services
         public FirebaseService()
         {
             var baseUrl = "https://slopeguard-8c766-default-rtdb.europe-west1.firebasedatabase.app/";
+            _firebaseClient = new FirebaseClient(baseUrl);
 
-            _firebaseClient = new FirebaseClient(
-                baseUrl,
-                new FirebaseOptions
-                {
-                    // each time the client needs a token, it'll pull the latest value
-                    AuthTokenAsyncFactory = () => Task.FromResult(AppConfig.FirebaseKey ?? string.Empty)
-                });
+            //_firebaseClient = new FirebaseClient(
+            //    baseUrl,
+            //    new FirebaseOptions
+            //    {
+            //        // each time the client needs a token, it'll pull the latest value
+            //        AuthTokenAsyncFactory = () => Task.FromResult(AppConfig.FirebaseKey ?? string.Empty)
+            //    });
         }
 
         // Save live session data (called by skier device)
@@ -53,7 +54,14 @@ namespace SlopeGuard.Services
             {
                 return observable.Subscribe(evt =>
                 {
-                    Console.WriteLine($"[DEBUG][FirebaseService] [LIVE DATA] Event for {guid}: IsNull={evt.Object == null}, Type={evt.EventType}");
+                    // <--- Place your debug/comment line here!
+                    Console.WriteLine($"[DEBUG][FirebaseService] [LIVE DATA] Raw event: {JsonConvert.SerializeObject(evt)}");
+
+                    if (evt.Object == null)
+                        Console.WriteLine($"[DEBUG][FirebaseService] [DESERIALIZATION FAILED] for {guid}, raw JSON: {JsonConvert.SerializeObject(evt)}");
+                    else
+                        Console.WriteLine($"[DEBUG][FirebaseService] [SUCCESS] Data: {JsonConvert.SerializeObject(evt.Object)}");
+
                     observer.OnNext(evt);
                 },
                 ex =>

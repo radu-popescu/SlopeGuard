@@ -11,6 +11,7 @@ using Microsoft.Maui.Maps;
 using Microsoft.Maui.Controls.Maps;
 using System;
 using Newtonsoft.Json;
+using Firebase.Database.Streaming;
 
 
 
@@ -94,20 +95,39 @@ public partial class MainPage : ContentPage
 
         Console.WriteLine($"[DEBUG][MainPage] Loaded from Preferences: _pairingGuid={_pairingGuid}, _isViewer={_isViewer}");
 
+        // Dispose any previous live data subscription
+        _liveDataSubscription?.Dispose();
+        _liveDataSubscription = null;
+
         if (_isViewer && !string.IsNullOrWhiteSpace(_pairingGuid))
         {
-            // In viewer mode, lock out controls and start subscription
+            // Viewer mode: disable buttons and show waiting status
             StartButton.Text = "Waiting…";
             StopButton.Text = "Disabled";
             StartButton.IsEnabled = false;
             StopButton.IsEnabled = false;
 
             Console.WriteLine($"[DEBUG][MainPage] Viewer mode detected, subscribing to live session with GUID {_pairingGuid}");
-            _firebaseService.SubscribeToLiveSessionData(_pairingGuid);
+
+            _liveDataSubscription = _firebaseService
+                .SubscribeToLiveSessionData(_pairingGuid)
+                .Subscribe(evt =>
+                {
+                    // Show waiting state if no data yet, else update UI
+                    if (evt.Object == null)
+                    {
+                        Console.WriteLine("[DEBUG][Viewer] No live session data yet, still waiting…");
+                        // Optionally update a status label here
+                    }
+                    else
+                    {
+                        OnLiveDataReceived(evt); // update UI with real data
+                    }
+                });
         }
         else
         {
-            // No pairing or not viewer — always reset to initial state
+            // Not a viewer, reset UI to normal
             StartButton.Text = "Start";
             StopButton.Text = "Stop";
             StartButton.IsEnabled = true;
@@ -117,6 +137,13 @@ public partial class MainPage : ContentPage
         _ = CenterMapOnCurrentLocationAsync();
     }
 
+
+    //protected override void OnDisappearing()
+    //{
+    //    base.OnDisappearing();
+    //    _liveDataSubscription?.Dispose();
+    //    _liveDataSubscription = null;
+    //}
 
 
 
@@ -362,10 +389,16 @@ public partial class MainPage : ContentPage
     private void OnLiveDataReceived(Firebase.Database.Streaming.FirebaseEvent<LiveSessionData> evt)
     {
         Console.WriteLine($"[DEBUG][Viewer] OnLiveDataReceived called for GUID: {_pairingGuid}");
-
+        Console.WriteLine($"[DEBUG][Viewer] Raw evt: {JsonConvert.SerializeObject(evt)}");
         if (evt.Object == null)
         {
-            Console.WriteLine("[DEBUG][Viewer] evt.Object is null.");
+            Console.WriteLine("[DEBUG][Viewer] No live session data yet, still waiting…");
+            // Optional: Show user feedback that we're waiting for the skier
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                // Uncomment if you have a StatusLabel in your UI
+                // StatusLabel.Text = "Waiting for skier to start session…";
+            });
             return;
         }
 
@@ -374,6 +407,9 @@ public partial class MainPage : ContentPage
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
+            // Optionally: Hide waiting status message if using StatusLabel
+            // StatusLabel.Text = "";
+
             // Defensive: Check if the controls are not null (in case of fast reload/navigation issues)
             if (SpeedLabelValue == null || AltitudeLabelValue == null)
             {
@@ -406,6 +442,7 @@ public partial class MainPage : ContentPage
             }
         });
     }
+
 
 
 
